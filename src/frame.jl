@@ -42,3 +42,19 @@ function expansion(N, Nn, c)
     v[N+3:N+3+Nn] = c[Nn+3:end]
     return v
 end
+
+# Construct Least Squares matrix
+function framematrix(x, eT, ewU, Nn, M, Me)
+    Tp = eltype(eT)
+    
+    A = Matrix{Tp}(undef, M+2*Me, 2*Nn+3)
+    A .= zero(Tp)
+    # Form columns of Least Squares matrix. 
+    for iter in 1:Nn+2
+        A[:,iter] = riemann(x, x -> eT[x,iter])
+    end
+    for iter in 1:Nn+1
+        A[:,Nn+2+iter] = riemann(x, x -> ewU[x,iter])
+    end
+    return A
+end
