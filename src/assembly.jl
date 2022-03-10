@@ -1,5 +1,5 @@
 using BandedMatrices: _BandedMatrix
-using ClassicalOrthogonalPolynomials: Hcat, Vcat, ∞, ℵ₀ 
+using ClassicalOrthogonalPolynomials: Hcat, Vcat, ∞, ℵ₀, Ones, Zeros
 
 # Identity mapping from appended sum space to dual sum space
 function idmap_append2sum(N, yu_2, yu_1, ywt0, ywt1)

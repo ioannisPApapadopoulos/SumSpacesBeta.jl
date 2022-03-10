@@ -1,3 +1,4 @@
+using Revise
 using SumSpaces
 using ClassicalOrthogonalPolynomials, Plots
 
@@ -16,7 +17,7 @@ A = framematrix(x, eT, ewU, Nn, M, Me)
 
 (w, yU_2, yU_1, ywT0, ywT1) = supporter_functions(Δt)
 (yU_2, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU_2, yU_1, ywT0, ywT1)
-(yu_2, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, N, Nn)
+(yu_2, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, N+2, N+1, Nn+2, Nn+1)
 
 Id = idmap_append2dual(N, yu_2, yu_1, ywt0, ywt1, Tp)
 D = fractionalhelmholtzmap(Δt, N, Tp)
@@ -29,13 +30,14 @@ timesteps=50
 for k = 1:timesteps
     v = Id * u[k]
     append!(u,  [D \ v])
+    # u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k+1], [1e2], N)[1]
 end
 
 p = plot()
-for k = 1 : timesteps+1
+for k = 1: timesteps+1
     t = Δt*(k-1)
     xx = -5:0.001:5
-    yy = sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k], xx, N)
+    yy = appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k], xx, N)
     xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
     p = plot(xx,yy, label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)
     sleep(0.1)

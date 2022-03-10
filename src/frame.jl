@@ -8,12 +8,12 @@ function solvesvd(A, b; tol=1e-7)
 end
 
 # Construct collocation points
-function collocation_points(M, Me; endpoints=5, gap=1e-5)
+function collocation_points(M, Me; endpoints=5, innergap = 0, outergap=1e-5)
     Tp = Float64
     x = Array{Tp}(undef,M+2*Me)
-    x[1:M] = LinRange{Tp}(-1,1,M)
-    x[M+1:M+Me] = LinRange{Tp}(-endpoints,-1-gap,Me)
-    x[M+1+Me:M+2*Me] = LinRange{Tp}(1+gap,endpoints,Me)
+    x[1:M] = LinRange{Tp}(-1+innergap,1-innergap,M)
+    x[M+1:M+Me] = LinRange{Tp}(-endpoints,-1-outergap,Me)
+    x[M+1+Me:M+2*Me] = LinRange{Tp}(1+outergap,endpoints,Me)
     return x
 end
 
@@ -36,14 +36,14 @@ function evaluate(x, f)
 end
 
 # Fit low order expansion to higher order expansion
-function expansion(N, Nn, c)
-    v = zeros(2*N+3)
-    v[1:Nn+2] = c[1:Nn+2]
-    v[N+3:N+3+Nn] = c[Nn+3:end]
+function expansion(N1, N2, Nn1, Nn2, c)
+    v = zeros(N1+N2)
+    v[1:Nn1] = c[1:Nn1]
+    v[N1+1:N1+Nn2] = c[Nn1+1:end]
     return v
 end
 
-# Construct Least Squares matrix
+# Construct Least Squares matrix for sum space
 function framematrix(x, eT, ewU, Nn, M, Me)
     Tp = eltype(eT)
     
@@ -55,6 +55,22 @@ function framematrix(x, eT, ewU, Nn, M, Me)
     end
     for iter in 1:Nn+1
         A[:,Nn+2+iter] = riemann(x, x -> ewU[x,iter])
+    end
+    return A
+end
+
+# Construct Least Squares matrix for dual sum space
+function dualframematrix(x, eU, ewT, Nn, M, Me)
+    Tp = eltype(eU)
+    
+    A = Matrix{Tp}(undef, M+2*Me, 2*Nn+7)
+    A .= zero(Tp)
+    # Form columns of Least Squares matrix. 
+    for iter in 1:Nn+4
+        A[:,iter] = riemann(x, x -> eU[x,iter])
+    end
+    for iter in 1:Nn+3
+        A[:,Nn+4+iter] = riemann(x, x -> ewT[x,iter])
     end
     return A
 end
