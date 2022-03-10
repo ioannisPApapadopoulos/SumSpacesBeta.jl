@@ -1,4 +1,4 @@
-using SumSpace
+using SumSpaces
 using ClassicalOrthogonalPolynomials, Plots
 
 N = 21
