@@ -1,5 +1,14 @@
 using FFTW, SpecialFunctions, Interpolations
 
+function inverse_fourier_transform(F, t; t0=-1000, dt=0.001)
+    w = ifftshift(fftfreq(length(t), 1/dt) * 2 * pi)
+    
+    f = ifftshift(ifft(F(t)))
+    f = f .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+
+    return (w[2:end], f[2:end])
+end
+
 
 function supporter_functions(Δt; t0=-1000., dt=0.001)
     t=range(t0,-t0,step=dt)

@@ -7,7 +7,7 @@ include("cft.jl")
 include("assembly.jl")
 
 export solvesvd, collocation_points, riemann, evaluate, expansion, framematrix, dualframematrix,
-            supporter_functions, interpolate_supporter_functions, columns_supporter_functions,
+            supporter_functions, interpolate_supporter_functions, columns_supporter_functions, inverse_fourier_transform,
             idmap_sum2dual, idmap_append2sum, idmap_append2dual, hilbertmap, diffmap, fractionalhelmholtzmap,
             sum_space, appended_sum_space, dual_sum_space
 

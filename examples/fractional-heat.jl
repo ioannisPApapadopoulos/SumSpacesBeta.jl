@@ -2,9 +2,9 @@ using Revise
 using SumSpaces
 using ClassicalOrthogonalPolynomials, Plots
 
-N = 21
+N = 5
 Tp = Float64
-Δt = 1e-2
+Δt = 1e-2 + 1e-2*im
 
 ewU = ExtendedWeightedChebyshevU{Tp}()
 eT = ExtendedChebyshevT{Tp}()
@@ -39,7 +39,7 @@ for k = 1: timesteps+1
     xx = -5:0.001:5
     yy = appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k], xx, N)
     xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
-    p = plot(xx,yy, label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)
+    p = plot(xx,yy, label="time=$t (s)", legend=:topleft)#, xlim=xlim, ylim=ylim)
     sleep(0.1)
     display(p)
 end  
