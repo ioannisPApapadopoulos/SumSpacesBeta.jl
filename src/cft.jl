@@ -10,17 +10,17 @@ function inverse_fourier_transform(F, t; t0=-1000, dt=0.001)
 end
 
 
-function supporter_functions(Δt; t0=-1000., dt=0.001)
+function supporter_functions(λ, μ; t0=-1000., dt=0.001)
     t=range(t0,-t0,step=dt)
     
-    ## Define function F[wT0] / (1 .+ Δt .* abs.(k))
-    FwT0 = k -> pi * besselj.(0, abs.(k)) ./ (1 .+ Δt .* abs.(k))
-    ## Define function F[wT1] / (1 .+ Δt .* abs.(k))
-    FwT1 = k -> -im * pi * besselj.(1, k) ./ (1 .+ Δt .* abs.(k))
-    ## Define function F[wT1] / (-i*sign.(k) - i*Δt .* k)
-    FU_2 = k -> [m ≈ 0. ? ComplexF64(0.) : ComplexF64(- im * pi * besselj.(1, m) ./ (-im * sign.(m) .- im * Δt .* m )) for m in k]
-    ## Define function F[wT0] / (-i*sign.(k) - i*Δt .* k)
-    FU_1 = k -> [m ≈ 0. ? ComplexF64(0.) : ComplexF64(pi * besselj.(0, abs.(m)) ./ (-im *sign.(m) .- im * Δt .* m )) for m in k]
+    ## Define function F[wT0] / (λ - i*μ*sgn(k)+  abs.(k))
+    FwT0 = k -> pi * besselj.(0, abs.(k)) ./ (λ .- im.*μ.*sign.(k) .+ abs.(k))
+    ## Define function F[wT1] / (λ - i*μ*sgn(k)+  abs.(k))
+    FwT1 = k -> -im * pi * besselj.(1, k) ./ (λ .- im.*μ.*sign.(k) .+ abs.(k))
+    ## Define function F[wT1] / (-i*λ*sign.(k) - μ - i*k)
+    FU_2 = k -> [m ≈ 0. ? ComplexF64(0.) : ComplexF64(- im * pi * besselj.(1, m) ./ (-im * λ * sign.(m) .- μ .- im * m )) for m in k]
+    ## Define function F[wT0] / (-i*λ*sign.(k) - μ - i*k)
+    FU_1 = k -> [m ≈ 0. ? ComplexF64(0.) : ComplexF64(pi * besselj.(0, abs.(m)) ./ (-im * λ * sign.(m) .- μ .- im * m )) for m in k]
 
     # Experimental for decaying support
     # FU_2 = k -> [m ≈ 0. ? ComplexF64(0.) : ComplexF64((- im * pi * besselj.(1, m) + 2 *im * sin.(m) ./ abs.(m)) ./ (-im * sign.(m) .- im * Δt .* m )) for m in k]
@@ -61,4 +61,18 @@ function columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, N1, N2, Nn1, 
     ywt0 = expansion(N1, N2, Nn1, Nn2, ywt0)
     ywt1 = expansion(N1, N2, Nn1, Nn2, ywt1)
     return (yu_2, yu_1, ywt0, ywt1)
+end
+
+function fractional_heat_fourier_solve(F, t, timesteps)
+    
+    Fn = k -> F(k, 1)
+    (x, f) = inverse_fourier_transform(Fn, t)
+    
+    fv = [f]
+    for n = 2:timesteps
+        Fn = k -> F(k, n)
+        (_, f) = inverse_fourier_transform(Fn, t)
+        append!(fv, [f])
+    end
+    return (x, fv)
 end
