@@ -25,49 +25,79 @@ function supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
     # Experimental for decaying support
     # FU_2 = k -> [m ≈ 0. ? ComplexF64(0.) : ComplexF64((- im * pi * besselj.(1, m) + 2 *im * sin.(m) ./ abs.(m)) ./ (-im * sign.(m) .- im * Δt .* m )) for m in k]
 
-    # scaling if element is not [-1,1]
-    sFwT0 = k -> 0.5*(a[2]-a[1]).*exp.(-im.*k.*(a[2]^2-a[1]^2)/4).*FwT0((a[2]-a[1])/2 .*k)
-    sFwT1 = k -> 0.5*(a[2]-a[1]).*exp.(-im.*k.*(a[2]^2-a[1]^2)/4).*FwT1((a[2]-a[1])/2 .*k)
-    sFU_2 = k -> 0.5*(a[2]-a[1]).*exp.(-im.*k.*(a[2]^2-a[1]^2)/4).*FU_2((a[2]-a[1])/2 .*k)
-    sFU_1 = k -> 0.5*(a[2]-a[1]).*exp.(-im.*k.*(a[2]^2-a[1]^2)/4).*FU_1((a[2]-a[1])/2 .*k)
+    # Scaling if element is not [-1,1]
 
-
-
-    w = ifftshift(fftfreq(length(t), 1/dt) * 2 * pi)
+    ## FIXME: Should be able to just do one FFT for each differently sized element. 
+    ## Experiments shows differences between translated elements that are the same size...
     
-    ywT0 = ifftshift(ifft(sFwT0(t)))
-    ywT0 = ywT0 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    c = 2. / (a[2:end] - a[1:end-1]); d = -c .* (a[1:end-1] + a[2:end]) ./ 2
+    el_no = length(c)
 
-    ywT1 = ifftshift(ifft(sFwT1(t)))
-    ywT1 = ywT1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    # sFwT0 = k -> (1/c).*FwT0((1/c) .*k)
+    # sFwT1 = k -> (1/c).*FwT1((1/c) .*k)
+    # sFU_2 = k -> (1/c).*FU_2((1/c) .*k)
+    # sFU_1 = k -> (1/c).*FU_1((1/c) .*k)
 
-    yU_2 = ifftshift(ifft(sFU_2(t)))
-    yU_2 = yU_2 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    w = ifftshift((fftfreq(length(t), 1/dt)) * 2 * pi) 
+    ywT0 = []; ywT1 = []; yU_2 = []; yU_1 = []
+    
+    for els = 1:el_no
+        ci = c[els]; di = d[els]
+        sFwT0 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FwT0((1/ci) .*k)
+        sFwT1 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FwT1((1/ci) .*k)
+        sFU_2 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FU_2((1/ci) .*k)
+        sFU_1 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FU_1((1/ci) .*k)
+        append!(ywT0, [cifft(sFwT0, t, dt, t0, w)[2:end]])
+        append!(ywT1, [cifft(sFwT1, t, dt, t0, w)[2:end]])
+        append!(yU_2, [cifft(sFU_2, t, dt, t0, w)[2:end]])
+        append!(yU_1, [cifft(sFU_1, t, dt, t0, w)[2:end]])
+    end
+    
+    # w = ifftshift((fftfreq(length(t), 1/dt)) * 2 * pi) 
+    
+    # ywT0 = ifftshift(ifft(sFwT0(t)))
+    # ywT0 = ywT0 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
 
-    yU_1 = ifftshift(ifft(sFU_1(t)))
-    yU_1 = yU_1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    # ywT1 = ifftshift(ifft(sFwT1(t)))
+    # ywT1 = ywT1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
 
-    return (w[2:end], yU_2[2:end], yU_1[2:end], ywT0[2:end], ywT1[2:end])
+    # yU_2 = ifftshift(ifft(sFU_2(t)))
+    # yU_2 = yU_2 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+
+    # yU_1 = ifftshift(ifft(sFU_1(t)))
+    # yU_1 = yU_1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+
+    return (w[2:end], yU_2, yU_1, ywT0, ywT1)
 end
 
+function cifft(f, t, dt, t0, w)
+    yf= ifftshift(ifft(f(t)))
+    yf = yf .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    return yf
+end
+
+
+
 function interpolate_supporter_functions(w, yU_2, yU_1, ywT0, ywT1)
-    yU_2 = interpolate((w,), real.(yU_2), Gridded(Linear()))
-    yU_1 = interpolate((w,), real.(yU_1), Gridded(Linear()))
-    ywT0 = interpolate((w,), real.(ywT0), Gridded(Linear()))
-    ywT1 = interpolate((w,), real.(ywT1), Gridded(Linear()))
-    return (yU_2, yU_1, ywT0, ywT1)
+    el_no = length(yU_2)
+    yyU_2 = [interpolate((w,), real.(yU_2[j]), Gridded(Linear())) for j in 1:el_no]
+    yyU_1 = [interpolate((w,), real.(yU_1[j]), Gridded(Linear())) for j in 1:el_no]
+    yywT0 = [interpolate((w,), real.(ywT0[j]), Gridded(Linear())) for j in 1:el_no]
+    yywT1 = [interpolate((w,), real.(ywT1[j]), Gridded(Linear())) for j in 1:el_no]
+    return (yyU_2, yyU_1, yywT0, yywT1)
 end
 
 function columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, N1, N2, Nn1, Nn2; tol=1e-6)
-    yu_1 = solvesvd(A, riemann(x, yU_1); tol=tol)
-    yu_2 = solvesvd(A, riemann(x, yU_2); tol=tol)
-    ywt0 = solvesvd(A, riemann(x, ywT0); tol=tol)
-    ywt1 = solvesvd(A, riemann(x, ywT1); tol=tol)
-    yu_1 = expansion(N1, N2, Nn1, Nn2, yu_1)
-    yu_2 = expansion(N1, N2, Nn1, Nn2, yu_2)
-    ywt0 = expansion(N1, N2, Nn1, Nn2, ywt0)
-    ywt1 = expansion(N1, N2, Nn1, Nn2, ywt1)
-    return (yu_2, yu_1, ywt0, ywt1)
+    el_no = length(yU_2)
+    yu_1 = [solvesvd(A, riemann(x, yU_1[j]); tol=tol) for j in 1:el_no]
+    yu_2 = [solvesvd(A, riemann(x, yU_2[j]); tol=tol) for j in 1:el_no]
+    ywt0 = [solvesvd(A, riemann(x, ywT0[j]); tol=tol) for j in 1:el_no]
+    ywt1 = [solvesvd(A, riemann(x, ywT1[j]); tol=tol) for j in 1:el_no]
+    yyu_1 = yu_1 #[expansion(N1, N2, Nn1, Nn2, yu_1[j]) for j in 1:el_no]
+    yyu_2 = yu_2 # [expansion(N1, N2, Nn1, Nn2, yu_2[j]) for j in 1:el_no]
+    yywt0 = ywt0 # [expansion(N1, N2, Nn1, Nn2, ywt0[j]) for j in 1:el_no]
+    yywt1 = ywt1 # [expansion(N1, N2, Nn1, Nn2, ywt1[j]) for j in 1:el_no]
+    return (yyu_2, yyu_1, yywt0, yywt1)
 end
 
 function fractional_heat_fourier_solve(F, t, timesteps)
