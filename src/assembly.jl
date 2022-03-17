@@ -53,13 +53,15 @@ function idmap_append2dual(N, yu_2, yu_1, ywt0, ywt1, Tp)
 end
 
 
-function fractionalhelmholtzmap(λ, μ, N, Tp)
+function fractionalhelmholtzmap(λ, μ, N, Tp; a=[-1.,1.])
     H = hilbertmap(N, Tp)
     C = diffmap(N, Tp)
     B = idmap_sum2dual(N, Tp)
     
     scale = 1.
-    D =  λ.*B + μ.*B*H + C*H 
+    el_size = a[2]-a[1]
+
+    D =  λ.*B + μ.*B*H + (2. / el_size).*C*H 
     D = hcat(D, zeros(size(D,1), 4))
     D[1,2*N+4] = scale
     D[2,2*N+5] = scale

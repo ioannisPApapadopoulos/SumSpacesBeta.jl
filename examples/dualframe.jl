@@ -16,7 +16,7 @@ eU = ExtendedChebyshevU{Tp}()
 M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me, innergap=1e-10) # Collocation points
-Nn = min(N,7)
+Nn = min(N,5)
 A = dualframematrix(x, eU, ewT, Nn, M, Me)
 
 (w, yU_2, yU_1, ywT0, ywT1) = supporter_functions(λ, μ)
@@ -65,7 +65,7 @@ for k = 1: timesteps+1
     t = Δt*(k-1)
     xx = -5:0.001:5
     yy = appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k], xx, N)
-    xlim = [xx[1],xx[end]]; ylim = [-1,1]
+    xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
     p = plot(xx,yy, label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)
     # p = plot!(xx1,real.(fv[k-1][-5 .< w .< 5]), label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)
     sleep(0.1)

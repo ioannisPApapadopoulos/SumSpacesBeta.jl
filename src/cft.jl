@@ -10,7 +10,7 @@ function inverse_fourier_transform(F, t; t0=-1000, dt=0.001)
 end
 
 
-function supporter_functions(λ, μ; t0=-1000., dt=0.001)
+function supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
     t=range(t0,-t0,step=dt)
     
     ## Define function F[wT0] / (λ - i*μ*sgn(k)+  abs.(k))
@@ -25,19 +25,26 @@ function supporter_functions(λ, μ; t0=-1000., dt=0.001)
     # Experimental for decaying support
     # FU_2 = k -> [m ≈ 0. ? ComplexF64(0.) : ComplexF64((- im * pi * besselj.(1, m) + 2 *im * sin.(m) ./ abs.(m)) ./ (-im * sign.(m) .- im * Δt .* m )) for m in k]
 
+    # scaling if element is not [-1,1]
+    sFwT0 = k -> 0.5*(a[2]-a[1]).*exp.(-im.*k.*(a[2]^2-a[1]^2)/4).*FwT0((a[2]-a[1])/2 .*k)
+    sFwT1 = k -> 0.5*(a[2]-a[1]).*exp.(-im.*k.*(a[2]^2-a[1]^2)/4).*FwT1((a[2]-a[1])/2 .*k)
+    sFU_2 = k -> 0.5*(a[2]-a[1]).*exp.(-im.*k.*(a[2]^2-a[1]^2)/4).*FU_2((a[2]-a[1])/2 .*k)
+    sFU_1 = k -> 0.5*(a[2]-a[1]).*exp.(-im.*k.*(a[2]^2-a[1]^2)/4).*FU_1((a[2]-a[1])/2 .*k)
+
+
 
     w = ifftshift(fftfreq(length(t), 1/dt) * 2 * pi)
     
-    ywT0 = ifftshift(ifft(FwT0(t)))
+    ywT0 = ifftshift(ifft(sFwT0(t)))
     ywT0 = ywT0 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
 
-    ywT1 = ifftshift(ifft(FwT1(t)))
+    ywT1 = ifftshift(ifft(sFwT1(t)))
     ywT1 = ywT1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
 
-    yU_2 = ifftshift(ifft(FU_2(t)))
+    yU_2 = ifftshift(ifft(sFU_2(t)))
     yU_2 = yU_2 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
 
-    yU_1 = ifftshift(ifft(FU_1(t)))
+    yU_1 = ifftshift(ifft(sFU_1(t)))
     yU_1 = yU_1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
 
     return (w[2:end], yU_2[2:end], yU_1[2:end], ywT0[2:end], ywT1[2:end])

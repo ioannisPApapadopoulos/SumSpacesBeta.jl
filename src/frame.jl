@@ -46,15 +46,25 @@ end
 # Construct Least Squares matrix for sum space
 function framematrix(x, eT, ewU, Nn, M, Me)
     Tp = eltype(eT)
-    
-    A = Matrix{Tp}(undef, M+2*Me, 2*Nn+3)
+    eltype(x) == Tp ? x=[x] : x=x
+
+    el = length(x)
+
+    A = Matrix{Tp}(undef, M+2*Me, 2*Nn+3 + (el-1)*(2*Nn+2))
     A .= zero(Tp)
     # Form columns of Least Squares matrix. 
     for iter in 1:Nn+2
-        A[:,iter] = riemann(x, x -> eT[x,iter])
+        A[:,iter] = riemann(x[1], x -> eT[x,iter])
     end
     for iter in 1:Nn+1
-        A[:,Nn+2+iter] = riemann(x, x -> ewU[x,iter])
+        A[:,Nn+2+iter] = riemann(x[1], x -> ewU[x,iter])
+    end
+
+    for els in 2:el
+        for iter in 1:Nn+1
+            A[:,2*(els-1)*Nn+2*els-1+iter] = riemann(x[els], x -> eT[x,iter+1])
+            A[:,(2*els-1)*Nn+2*els+iter] = riemann(x[els], x -> ewU[x,iter])
+        end
     end
     return A
 end
@@ -74,3 +84,23 @@ function dualframematrix(x, eU, ewT, Nn, M, Me)
     end
     return A
 end
+
+
+# function framematrix3(x1, x2, x3, eT, ewU, Nn, M, Me)
+#     Tp = eltype(eT)
+    
+#     A = Matrix{Tp}(undef, M+2*Me, 6*Nn+7)
+#     A .= zero(Tp)
+#     # Form columns of Least Squares matrix. 
+#     for iter in 1:Nn+2
+#         A[:,iter] = riemann(x1, x -> eT[x,iter])
+#     end
+#     for iter in 1:Nn+1
+#         A[:,Nn+2+iter] = riemann(x1, x -> ewU[x,iter])
+#         A[:,2*Nn+3+iter] = riemann(x2, x -> eT[x,iter+1])
+#         A[:,3*Nn+4+iter] = riemann(x2, x -> ewU[x,iter])
+#         A[:,4*Nn+5+iter] = riemann(x3, x -> eT[x,iter+1])
+#         A[:,5*Nn+6+iter] = riemann(x3, x -> ewU[x,iter])
+#     end
+#     return A
+# end
