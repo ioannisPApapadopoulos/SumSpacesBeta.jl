@@ -13,26 +13,34 @@ function idmap_append2sum(N, yu_2, yu_1, ywt0, ywt1; el_no=1)
 end
 
 # Hilbert matrix from sum space to sum space
-function hilbertmap(N, Tp)
-    H = Matrix{Tp}(undef,2*N+3,2*N+3)
+function hilbertmap(N; el_no=1, Tp=Float64)
+    H = Matrix{Tp}(undef,2*N+3+(el_no-1)*(2*N+2),2*N+3+(el_no-1)*(2*N+2))
     H[:,:].= zero(Tp)
-    dc1 = N+2; dc2 = N+1
-    H[dc1+1:dc1+dc2, 2:dc1] = Matrix{Tp}(-I, dc2, dc2)
-    H[2:dc1,dc1+1:end] = Matrix{Tp}(I, dc1-1, dc1-1)
+    # dc1 = N+2; dc2 = N+1
+    H[N+3:2*N+3, 2:N+2] = Matrix{Tp}(-I, N+1, N+1)
+    H[2:N+2,N+3:2*N+3] = Matrix{Tp}(I, N+1, N+1)
+
+    for e in 1:el_no
+        H[(2*e-1)*N+2*e+1:2*e*N+2*e+1,2*(e-1)*N+2*e:(2*e-1)*N+2*e] = Matrix{Tp}(-I, N+1, N+1)
+        H[2*(e-1)*N+2*e:(2*e-1)*N+2*e,(2*e-1)*N+2*e+1:2*e*N+2*e+1] = Matrix{Tp}(I, N+1, N+1)
+    end
     return H
 end
 
 # Differentiation matrix from sum space to dual sum space
-function diffmap(N; el_no =1, Tp=Float64)
-    dc1 = N+2; dc2 = N+1
+function diffmap(N; a=[-1.,1.], el_no =1, Tp=Float64)
+    # dc1 = N+2; dc2 = N+1
     C = Matrix{Tp}(undef, 2*N+7+(el_no-1)*(2*N+6),2*N+3+(el_no-1)*(2*N+2))
     C .= zero(Tp)
-    C[3:N+3,2:N+2] = Diagonal(1.:dc2)
-    C[N+6:2*N+6,N+3:2*N+3] = Diagonal(-1.:-1:-dc2)
+    
+    el_size = a[2:end] .- a[1:end-1]
+
+    C[3:N+3,2:N+2] = (2. / el_size[1]) .* Diagonal(1.:N+1)
+    C[N+6:2*N+6,N+3:2*N+3] = (2. / el_size[1]) .* Diagonal(-1.:-1:-(N+1))
     # C[2*N+7, N+3:2*N+3] = zeros(1,dc2)
     for e in 2:el_no
-        C[2*(e-1)*N+6*e-3:(2*e-1)*N+6*e-3,2*(e-1)*N+2*e:(2*e-1)*N+2*e] = Diagonal(1.:dc2)
-        C[(2*e-1)*N+6*e:2*e*N+6*e,(2*e-1)*N+2*e+1:2*e*N+2*e+1] = Diagonal(-1.:-1:-dc2)
+        C[2*(e-1)*N+6*e-3:(2*e-1)*N+6*e-3,2*(e-1)*N+2*e:(2*e-1)*N+2*e] = (2. / el_size[e]) .* Diagonal(1.:N+1)
+        C[(2*e-1)*N+6*e:2*e*N+6*e,(2*e-1)*N+2*e+1:2*e*N+2*e+1] = (2. / el_size[e]) .* Diagonal(-1.:-1:-(N+1))
     end
     return C
 end
@@ -64,14 +72,13 @@ end
 
 
 function fractionalhelmholtzmap(λ, μ, N; a=[-1.,1.], el_no=1, Tp=Tp)
-    H = hilbertmap(N, Tp)
-    C = diffmap(N, Tp)
+    H = hilbertmap(N, el_no=el_no, Tp=Tp)
+    C = diffmap(N, a=a, el_no=el_no, Tp=Float64)
     B = idmap_sum2dual(N, el_no=el_no, Tp=Tp)
     
     scale = 1.
-    el_size = a[2]-a[1]
 
-    D =  λ.*B + μ.*B*H + (2. / el_size).*C*H 
+    D =  λ.*B + μ.*B*H + C*H 
     D = hcat(D, zeros(size(D,1), 4))
     D[1,2*N+4] = scale
     D[2,2*N+5] = scale
