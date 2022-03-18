@@ -36,10 +36,16 @@ function evaluate(x, f)
 end
 
 # Fit low order expansion to higher order expansion
-function expansion(N1, N2, Nn1, Nn2, c)
-    v = zeros(N1+N2)
-    v[1:Nn1] = c[1:Nn1]
-    v[N1+1:N1+Nn2] = c[Nn1+1:end]
+function expansion_sum_space(c, Nn, N, el_no)
+    # N1 = N+2; N2 = N+1; Nn1 = Nn+2; Nn2 = Nn+1; 
+    v = zeros(2*N+3 + (el_no-1)*(2*N+2))
+    v[1:Nn+2] = c[1:Nn+2]
+    v[N+3:N+3+Nn] = c[Nn+3:2*Nn+3]
+
+    for e in 2:el_no
+        v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e:(2*e-1)*Nn+2*e]
+        v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e+1:2*e*Nn+2*e+1]
+    end
     return v
 end
 

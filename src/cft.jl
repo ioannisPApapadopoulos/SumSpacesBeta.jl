@@ -30,7 +30,7 @@ function supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
     ## FIXME: Should be able to just do one FFT for each differently sized element. 
     ## Experiments shows differences between translated elements that are the same size...
     
-    c = 2. / (a[2:end] - a[1:end-1]); d = -c .* (a[1:end-1] + a[2:end]) ./ 2
+    c = 2. ./ (a[2:end] - a[1:end-1]); d = -c .* (a[1:end-1] + a[2:end]) ./ 2
     el_no = length(c)
 
     # sFwT0 = k -> (1/c).*FwT0((1/c) .*k)
@@ -87,16 +87,16 @@ function interpolate_supporter_functions(w, yU_2, yU_1, ywT0, ywT1)
     return (yyU_2, yyU_1, yywT0, yywT1)
 end
 
-function columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, N1, N2, Nn1, Nn2; tol=1e-6)
+function columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, Nn, N; tol=1e-6)
     el_no = length(yU_2)
     yu_1 = [solvesvd(A, riemann(x, yU_1[j]); tol=tol) for j in 1:el_no]
     yu_2 = [solvesvd(A, riemann(x, yU_2[j]); tol=tol) for j in 1:el_no]
     ywt0 = [solvesvd(A, riemann(x, ywT0[j]); tol=tol) for j in 1:el_no]
     ywt1 = [solvesvd(A, riemann(x, ywT1[j]); tol=tol) for j in 1:el_no]
-    yyu_1 = yu_1 #[expansion(N1, N2, Nn1, Nn2, yu_1[j]) for j in 1:el_no]
-    yyu_2 = yu_2 # [expansion(N1, N2, Nn1, Nn2, yu_2[j]) for j in 1:el_no]
-    yywt0 = ywt0 # [expansion(N1, N2, Nn1, Nn2, ywt0[j]) for j in 1:el_no]
-    yywt1 = ywt1 # [expansion(N1, N2, Nn1, Nn2, ywt1[j]) for j in 1:el_no]
+    yyu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no) for j in 1:el_no]
+    yyu_2 = [expansion_sum_space(yu_2[j], Nn, N, el_no) for j in 1:el_no]
+    yywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no) for j in 1:el_no]
+    yywt1 = [expansion_sum_space(ywt1[j], Nn, N, el_no) for j in 1:el_no]
     return (yyu_2, yyu_1, yywt0, yywt1)
 end
 

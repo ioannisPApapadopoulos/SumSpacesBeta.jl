@@ -6,7 +6,7 @@ include("frame.jl")
 include("cft.jl")
 include("assembly.jl")
 
-export solvesvd, collocation_points, riemann, evaluate, expansion, framematrix, dualframematrix,          
+export solvesvd, collocation_points, riemann, evaluate, expansion_sum_space, framematrix, dualframematrix,          
             supporter_functions, interpolate_supporter_functions, columns_supporter_functions, inverse_fourier_transform, fractional_heat_fourier_solve,
             idmap_sum2dual, idmap_append2sum, idmap_append2dual, hilbertmap, diffmap, fractionalhelmholtzmap,
             affinetransform, sum_space, appended_sum_space, dual_sum_space
