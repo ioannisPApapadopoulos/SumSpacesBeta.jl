@@ -4,11 +4,18 @@ using ClassicalOrthogonalPolynomials: Hcat, Vcat, ∞, ℵ₀, Ones, Zeros
 # Identity mapping from appended sum space to dual sum space
 function idmap_append2sum(N, yu_2, yu_1, ywt0, ywt1; el_no=1)
     Id = I[1:2*N+3 + (el_no-1)*(2*N+2),1:2*N+3+(el_no-1)*(2*N+2)]
-
-    Id = hcat(Id, yu_2...)
-    Id = hcat(Id, yu_1...)
-    Id = hcat(Id, ywt0...)
-    Id = hcat(Id, ywt1...)
+    Id = hcat(Id, yu_2[1])
+    Id = hcat(Id, yu_1[1])
+    Id = hcat(Id, ywt0[1])
+    Id = hcat(Id, ywt1[1])
+    #FIXME: Explain why order is changed
+    for e in 2:el_no
+        # yu_2[e][1] += 1.
+        Id = hcat(Id, yu_1[e])
+        Id = hcat(Id, yu_2[e])
+        Id = hcat(Id, ywt0[e])
+        Id = hcat(Id, ywt1[e])
+    end
     return Id
 end
 
