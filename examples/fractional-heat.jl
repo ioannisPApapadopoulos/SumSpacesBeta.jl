@@ -1,7 +1,7 @@
 using SumSpaces
 using ClassicalOrthogonalPolynomials, Plots
 
-N = 11
+N = 21
 Tp = Float64
 λ = 1e2
 μ = 0
@@ -13,15 +13,15 @@ eT = ExtendedChebyshevT{Tp}()
 M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me) # Collocation points
-Nn = min(N,5)
+Nn = min(N,7)
 A = framematrix(x, eT, ewU, Nn, M, Me)
 
 (w, yU_2, yU_1, ywT0, ywT1) = supporter_functions(λ, μ)
 (yU_2, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU_2, yU_1, ywT0, ywT1)
-(yu_2, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, N+2, N+1, Nn+2, Nn+1)
+(yu_2, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, Nn, N)
 
-Id = idmap_append2dual(N, yu_2, yu_1, ywt0, ywt1, Tp)
-D = fractionalhelmholtzmap(λ, μ, N, Tp)
+Id = idmap_append2dual(N, yu_2, yu_1, ywt0, ywt1, Tp=Tp)
+D = fractionalhelmholtzmap(λ, μ, N, Tp=Tp)
 
 u₀ = zeros(2*N+7)
 u₀[N+3] = 1.
