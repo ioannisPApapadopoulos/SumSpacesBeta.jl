@@ -71,7 +71,9 @@ function idmap_append2dual(N, yu_2, yu_1, ywt0, ywt1; el_no=1, Tp=Float64)
 end
 
 
-function fractionalhelmholtzmap(λ, μ, N; a=[-1.,1.], el_no=1, Tp=Tp)
+function fractionalhelmholtzmap(λ, μ, N; a=[-1.,1.],Tp=Float64)
+    el_no = length(a)-1
+
     H = hilbertmap(N, el_no=el_no, Tp=Tp)
     C = diffmap(N, a=a, el_no=el_no, Tp=Float64)
     B = idmap_sum2dual(N, el_no=el_no, Tp=Tp)
@@ -79,11 +81,18 @@ function fractionalhelmholtzmap(λ, μ, N; a=[-1.,1.], el_no=1, Tp=Tp)
     scale = 1.
 
     D =  λ.*B + μ.*B*H + C*H 
-    D = hcat(D, zeros(size(D,1), 4))
-    D[1,2*N+4] = scale
-    D[2,2*N+5] = scale
-    D[N+5,2*N+6] = scale
-    D[N+6,2*N+7] = scale
+    D = hcat(D, zeros(size(D,1), 4*el_no))
+    D[1,end-4*el_no+1] = scale
+    D[2,end-4*el_no+2] = scale
+    D[N+5,end-4*el_no+3] = scale
+    D[N+6,end-4*el_no+4] = scale
+
+    for e in 2:el_no
+        D[2*(e-1)*N+6*(e-1)+2,end-4*(el_no-e+1)+1] = scale
+        D[2*(e-1)*N+6*(e-1)+3,end-4*(el_no-e+1)+2] = scale
+        D[(2*e-1)*N+6*e-1,end-4*(el_no-e+1)+3] = scale
+        D[(2*e-1)*N+6*e,end-4*(el_no-e+1)+4] = scale
+    end
 
     return D
 end
