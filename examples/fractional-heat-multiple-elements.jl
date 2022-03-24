@@ -1,9 +1,10 @@
+using Revise
 using SumSpaces
 using ClassicalOrthogonalPolynomials, Plots
 
-N = 21
+N = 5
 Tp = Float64
-λ = 1e2
+λ = 1e1
 μ = 0
 Δt = 1/λ
 
@@ -20,7 +21,7 @@ x1 = affinetransform(a[1],a[2],x)
 x2 = affinetransform(a[2],a[3],x)
 x3 = affinetransform(a[3],a[4],x)
 
-Nn = min(N,5)
+Nn = min(N,11)
 A = framematrix([x1,x2,x3], eT, ewU, Nn, M, Me)
 
 (w, yU_2, yU_1, ywT0, ywT1) = supporter_functions(λ, μ, a=a)
@@ -34,7 +35,9 @@ plot!(xx, yU_2[1](xx))
 Id = idmap_append2dual(N, yu_2, yu_1, ywt0, ywt1, el_no=el_no, Tp=Tp)
 D = fractionalhelmholtzmap(λ, μ, N, a=a,Tp=Tp)
 
-u₀ = zeros(2*N+7+(el_no-1)*(2*N+6))
+Ds = split_block_helmholtz_matrix(D, el_no)
+
+u₀ = zeros(1+el_no*(2*N+6))
 u₀[3N+5] = 1. # Coefficient corresponding to sqrt(1-x^2) on |x| ≤ 1. 
 u = [u₀]
 
@@ -49,13 +52,30 @@ for k = 1:timesteps
     u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k+1], [1e3], N)[1]
 end
 
+# for k = 1:timesteps
+#     v = Id * u[k]
+#     v = λ.*v
+#     vs = split_block_helmholtz_vector(v, el_no)
+
+#     us = []
+#     uss = []
+#     for e in 1:el_no
+#         ut = Ds[e] \ vs[e]
+#         append!(us, ut[1:end-4])
+#         append!(uss, ut[end-3:end])
+#     end
+    
+#     append!(u,  [append!(us, uss)])
+#     # append!(u,  [uss])
+#     u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k+1], [1e3], N)[1]
+# end
 
 b = 20.
 # xx1 = w[-b .< w .< b]
 
 p = plot()
 # anim = @animate  for k = 2: timesteps+1
-for k = 2: timesteps+1
+for k = 1: timesteps+1
     t = round(Δt*(k-1), digits=2)
     xx = -10:0.001:10
     yy = appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k], xx, N,a=a)

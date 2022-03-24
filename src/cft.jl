@@ -87,16 +87,16 @@ function interpolate_supporter_functions(w, yU_2, yU_1, ywT0, ywT1)
     return (yyU_2, yyU_1, yywT0, yywT1)
 end
 
-function columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, Nn, N; tol=1e-6)
+function columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, Nn, N; tol=1e-6, constant=true)
     el_no = length(yU_2)
     yu_1 = [solvesvd(A, riemann(x, yU_1[j]); tol=tol) for j in 1:el_no]
     yu_2 = [solvesvd(A, riemann(x, yU_2[j]); tol=tol) for j in 1:el_no]
     ywt0 = [solvesvd(A, riemann(x, ywT0[j]); tol=tol) for j in 1:el_no]
     ywt1 = [solvesvd(A, riemann(x, ywT1[j]); tol=tol) for j in 1:el_no]
-    yyu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no) for j in 1:el_no]
-    yyu_2 = [expansion_sum_space(yu_2[j], Nn, N, el_no) for j in 1:el_no]
-    yywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no) for j in 1:el_no]
-    yywt1 = [expansion_sum_space(ywt1[j], Nn, N, el_no) for j in 1:el_no]
+    yyu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no, constant) for j in 1:el_no]
+    yyu_2 = [expansion_sum_space(yu_2[j], Nn, N, el_no, constant) for j in 1:el_no]
+    yywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no, constant) for j in 1:el_no]
+    yywt1 = [expansion_sum_space(ywt1[j], Nn, N, el_no, constant) for j in 1:el_no]
     return (yyu_2, yyu_1, yywt0, yywt1)
 end
 
