@@ -19,13 +19,13 @@ x = collocation_points(M, Me, innergap=1e-10) # Collocation points
 Nn = min(N,5)
 A = dualframematrix(x, eU, ewT, Nn, M, Me)
 
-(w, yU_2, yU_1, ywT0, ywT1) = supporter_functions(λ, μ)
-(yU_2, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU_2, yU_1, ywT0, ywT1)
-(yu_2, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, N+4, N+3, Nn+4, Nn+3)
+(w, yU0, yU_1, ywT0, ywT1) = supporter_functions(λ, μ)
+(yU0, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU0, yU_1, ywT0, ywT1)
+(yu0, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU0, yU_1, ywT0, ywT1, N+4, N+3, Nn+4, Nn+3)
 
 xx = -5:0.01:5
-plot(xx, yU_2(xx))
-plot!(xx, dual_sum_space(eU, ewT, yu_2, xx, N))
+plot(xx, yU0(xx))
+plot!(xx, dual_sum_space(eU, ewT, yu0, xx, N))
 
 
 Id = idmap_sum2dual(N, Tp)
@@ -35,7 +35,7 @@ D = fractionalhelmholtzmap(λ, μ, N, Tp)
 # endpoint = 10
 # D[1,1:N+2] = eT[endpoint,1:N+2]
 # D[1,N+3:2*N+3] = ewU[endpoint,1:N+1]
-# D[1,2*N+4] = yU_2(endpoint)
+# D[1,2*N+4] = yU0(endpoint)
 # D[1,2*N+5] = yU_1(endpoint)
 # D[1,2*N+6] = ywT0(endpoint)
 # D[1,2*N+7] = ywT1(endpoint)
@@ -48,7 +48,7 @@ timesteps=50
 for k = 1:timesteps
     v = Id * u[k][1:end-4]
     v = (v 
-        + u[k][end-3].* yu_2 
+        + u[k][end-3].* yu0 
         + u[k][end-2].* yu_1 
         + u[k][end-1].* ywt0 
         + u[k][end].* ywt1)
@@ -56,7 +56,7 @@ for k = 1:timesteps
     # v = vcat([0.],v)
     v = λ .* v
     append!(u,  [D \ v])
-    u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k+1], [1e2], N)[1]
+    u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u[k+1], [1e2], N)[1]
 end
 
 p = plot()
@@ -64,7 +64,7 @@ p = plot()
 for k = 1: timesteps+1
     t = Δt*(k-1)
     xx = -5:0.001:5
-    yy = appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k], xx, N)
+    yy = appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u[k], xx, N)
     xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
     p = plot(xx,yy, label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)
     # p = plot!(xx1,real.(fv[k-1][-5 .< w .< 5]), label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)

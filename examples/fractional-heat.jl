@@ -17,11 +17,14 @@ x = collocation_points(M, Me) # Collocation points
 Nn = min(N,7)
 A = framematrix(x, eT, ewU, Nn, M, Me)
 
-(w, yU_2, yU_1, ywT0, ywT1) = supporter_functions(λ, μ)
-(yU_2, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU_2, yU_1, ywT0, ywT1)
-(yu_2, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, Nn, N)
+(w, yU0, yU_1, ywT0, ywT1) = supporter_functions(λ, μ)
+(yU0, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU0, yU_1, ywT0, ywT1)
+(yu0, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU0, yU_1, ywT0, ywT1, Nn, N)
 
-Id = idmap_append2dual(N, yu_2, yu_1, ywt0, ywt1, Tp=Tp)
+xx = -5:0.01:5
+plot!(xx, yU_1[1](xx))
+
+Id = idmap_append2dual(N, yu0, yu_1, ywt0, ywt1, Tp=Tp)
 D = fractionalhelmholtzmap(λ, μ, N, Tp=Tp)
 
 u₀ = zeros(2*N+7)
@@ -35,13 +38,13 @@ for k = 1:timesteps
     v = λ.*v
 
     u1 = D \ v
-    # f = x -> appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u1, x, N)
+    # f = x -> appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u1, x, N)
     # u1 = solvesvd(Ap, riemann(x, f); tol=1e-2)
     # u1 = vcat(u1, zeros(4))
     
     append!(u,  [u1])
-    u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k+1], [1e2], N)[1]
-    # f = x -> appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k+1], x, N)
+    u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u[k+1], [1e2], N)[1]
+    # f = x -> appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u[k+1], x, N)
 end
 
 
@@ -52,7 +55,7 @@ p = plot()
 for k = 2: timesteps+1
     t = Δt*(k-1)
     xx = -5:0.001:5
-    yy = appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k], xx, N)
+    yy = appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u[k], xx, N)
     xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
     p = plot(xx,yy, label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)
     # p = plot!(xx1,real.(fv[k-1][-5 .< w .< 5]), label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)

@@ -4,7 +4,7 @@ using ClassicalOrthogonalPolynomials, Plots
 
 N = 5
 Tp = Float64
-λ = 1e1
+λ = 1e2
 μ = 0
 Δt = 1/λ
 
@@ -24,15 +24,15 @@ x3 = affinetransform(a[3],a[4],x)
 Nn = min(N,11)
 A = framematrix([x1,x2,x3], eT, ewU, Nn, M, Me)
 
-(w, yU_2, yU_1, ywT0, ywT1) = supporter_functions(λ, μ, a=a)
-(yU_2, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU_2, yU_1, ywT0, ywT1)
-(yu_2, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU_2, yU_1, ywT0, ywT1, Nn, N)
+(w, yU0, yU_1, ywT0, ywT1) = supporter_functions(λ, μ, a=a)
+(yU0, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU0, yU_1, ywT0, ywT1)
+(yu0, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU0, yU_1, ywT0, ywT1, Nn, N)
 
 xx = -5:0.01:5
-plot(xx, sum_space(eT, ewU, yu_2[1], xx, N, a=a))
-plot!(xx, yU_2[1](xx))
+plot(xx, sum_space(eT, ewU, yu0[1], xx, N, a=a))
+plot!(xx, yU0[1](xx))
 
-Id = idmap_append2dual(N, yu_2, yu_1, ywt0, ywt1, el_no=el_no, Tp=Tp)
+Id = idmap_append2dual(N, yu0, yu_1, ywt0, ywt1, el_no=el_no, Tp=Tp)
 D = fractionalhelmholtzmap(λ, μ, N, a=a,Tp=Tp)
 
 Ds = split_block_helmholtz_matrix(D, el_no)
@@ -49,7 +49,7 @@ for k = 1:timesteps
     u1 = D \ v
     
     append!(u,  [u1])
-    u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k+1], [1e3], N)[1]
+    u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u[k+1], [1e3], N)[1]
 end
 
 # for k = 1:timesteps
@@ -67,7 +67,7 @@ end
     
 #     append!(u,  [append!(us, uss)])
 #     # append!(u,  [uss])
-#     u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k+1], [1e3], N)[1]
+#     u[k+1][1] = u[k+1][1] - appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u[k+1], [1e3], N)[1]
 # end
 
 b = 20.
@@ -78,7 +78,7 @@ p = plot()
 for k = 1: timesteps+1
     t = round(Δt*(k-1), digits=2)
     xx = -10:0.001:10
-    yy = appended_sum_space(eT, ewU, yU_2, yU_1, ywT0, ywT1, u[k], xx, N,a=a)
+    yy = appended_sum_space(eT, ewU, yU0, yU_1, ywT0, ywT1, u[k], xx, N,a=a)
     xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
     p = plot(xx,yy, title="time=$t (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
     # p = plot!(xx1,real.(fv[k-1][-b .< w .< b]), label="Fourier transform method", legend=:topleft, xlim=xlim, ylim=ylim)
