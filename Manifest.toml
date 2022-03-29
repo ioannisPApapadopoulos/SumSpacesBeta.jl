@@ -104,9 +104,9 @@ version = "0.1.2"
 
 [[ContinuumArrays]]
 deps = ["ArrayLayouts", "BandedMatrices", "BlockArrays", "FillArrays", "InfiniteArrays", "Infinities", "IntervalSets", "LazyArrays", "LinearAlgebra", "QuasiArrays", "RecipesBase", "StaticArrays"]
-git-tree-sha1 = "397a0455c259ba21e11e7fbb1212b9e63f1311cd"
+git-tree-sha1 = "5ecad247492887d25268ec0861791dcae08a96ea"
 uuid = "7ae1f121-cc2c-504b-ac30-9b923412ae5c"
-version = "0.10.0"
+version = "0.10.1"
 
 [[DSP]]
 deps = ["Compat", "FFTW", "IterTools", "LinearAlgebra", "Polynomials", "Random", "Reexport", "SpecialFunctions", "Statistics"]

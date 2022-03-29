@@ -1,5 +1,3 @@
-using FFTW, SpecialFunctions, Interpolations
-
 function inverse_fourier_transform(F, t; t0=-1000, dt=0.001)
     w = ifftshift(fftfreq(length(t), 1/dt) * 2 * pi)
     
