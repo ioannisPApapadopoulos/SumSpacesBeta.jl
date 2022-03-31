@@ -42,3 +42,16 @@ end
     A = _BandedMatrix((zero(T):∞)', ℵ₀, -1,1)
     ApplyQuasiMatrix(*, SumSpaceD{T}(), A)
 end
+
+# Credit to Timon Gutleb for the below implementation of the identity mapping
+function \(Sd::SumSpaceD, Sp::SumSpaceP)
+    T = promote_type(eltype(Sp), eltype(Sd))
+    halfvec = mortar(Fill.(1/2,Fill(2,∞)))
+    d = Diagonal((-1).^(2:∞))*halfvec
+    zs = mortar(Zeros.(Fill(2,∞)))
+    ld = Diagonal((-1).^(1:∞))*halfvec
+    dat = BlockBroadcastArray(hcat,d,zs,ld)
+    dat = BlockVcat([-1.,0.,1]', dat)
+    A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (0,0))
+    return A
+end
