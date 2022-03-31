@@ -83,7 +83,9 @@ version = "0.1.2"
 
 [[ClassicalOrthogonalPolynomials]]
 deps = ["ArrayLayouts", "BandedMatrices", "BlockArrays", "BlockBandedMatrices", "ContinuumArrays", "DomainSets", "FFTW", "FastGaussQuadrature", "FastTransforms", "FillArrays", "HypergeometricFunctions", "InfiniteArrays", "InfiniteLinearAlgebra", "IntervalSets", "LazyArrays", "LazyBandedMatrices", "LinearAlgebra", "QuasiArrays", "SpecialFunctions"]
-git-tree-sha1 = "6b5862ee93acc348ed7144e4f25fda946bb5f50d"
+git-tree-sha1 = "73aed17979e65864a014bf3c507985404a803189"
+repo-rev = "main"
+repo-url = "../ClassicalOrthogonalPolynomials"
 uuid = "b30e2e7b-c4ee-47da-9d5f-2c5c27239acd"
 version = "0.5.1"
 
@@ -279,9 +281,9 @@ version = "1.4.1"
 
 [[LazyArrays]]
 deps = ["ArrayLayouts", "FillArrays", "LinearAlgebra", "MacroTools", "MatrixFactorizations", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "e20371e416fd9e7cac1963b024b2243d3d36c03a"
+git-tree-sha1 = "7c68d0680060e934af2d6ccd9bb06ff870a45bb1"
 uuid = "5078a376-72f3-5289-bfd5-ec5146d43c02"
-version = "0.22.5"
+version = "0.22.6"
 
 [[LazyArtifacts]]
 deps = ["Artifacts", "Pkg"]
@@ -289,9 +291,9 @@ uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[LazyBandedMatrices]]
 deps = ["ArrayLayouts", "BandedMatrices", "BlockArrays", "BlockBandedMatrices", "FillArrays", "LazyArrays", "LinearAlgebra", "MatrixFactorizations", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "8f4c427f6b505294dfefd343c8373b8c74e09973"
+git-tree-sha1 = "9657dd662163139a72c1c8bc13f25a723c27a5bd"
 uuid = "d7e5e226-e90b-4449-9968-0f923699bf6f"
-version = "0.7.6"
+version = "0.7.9"
 
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -428,9 +430,9 @@ uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [[QuasiArrays]]
 deps = ["ArrayLayouts", "DomainSets", "FillArrays", "LazyArrays", "LinearAlgebra", "StaticArrays"]
-git-tree-sha1 = "939368b6a517a20bebf90dc8d67749c0cb56755a"
+git-tree-sha1 = "7b292d75f0f99888d7e522da519cd07e7f10157b"
 uuid = "c4ea9172-b204-11e9-377d-29865faadc5c"
-version = "0.9.0"
+version = "0.9.1"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
@@ -505,9 +507,9 @@ version = "0.5.6"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "74fb527333e72ada2dd9ef77d98e4991fb185f04"
+git-tree-sha1 = "4f6ec5d99a28e1a749559ef7dd518663c5eca3d5"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.4.1"
+version = "1.4.3"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
