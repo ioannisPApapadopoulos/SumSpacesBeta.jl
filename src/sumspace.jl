@@ -37,10 +37,18 @@ end
 ###
 
 # SumSpaceD() \(D*SumSpaceP())
-@simplify function *(D::Derivative{<:Any,<:Real}, S::SumSpaceP)
-    T = promote_type(eltype(D),eltype(S))
-    A = _BandedMatrix((zero(T):∞)', ℵ₀, -1,1)
-    ApplyQuasiMatrix(*, SumSpaceD{T}(), A)
+# function *(D::Derivative{<:Any,<:Real}, S::SumSpaceP)
+function \(Sp::SumSpaceP, Sd::SumSpaceD)
+    T = promote_type(eltype(Sp), eltype(Sd))
+    halfvec = mortar(Fill.(1/2,Fill(2,∞)))
+    d = Diagonal((-1).^(2:∞))halfvec
+    zs = mortar(Zeros.(Fill(2,∞)))
+    ld = Diagonal((-1).^(1:∞))*halfvec
+    # dat = BlockBroadcastArray(hcat,onevec,2*onevec,3*onevec,4*onevec,5*onevec,6*onevec,7*onevec,8*onevec,9*onevec)
+    dat = BlockBroadcastArray(hcat,d,zs,ld,zs,zs,zs,ld,zs,d)
+    dat = BlockVcat(Fill(0,9)', dat)
+    A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (1,1))
+    return A#ApplyQuasiMatrix(*, SumSpaceD{T}(), A)
 end
 
 # Credit to Timon Gutleb for the below implementation of the identity mapping
