@@ -8,7 +8,7 @@ using SpecialFunctions, LinearAlgebra, BlockBandedMatrices, BlockArrays,
 import QuasiArrays: DefaultQuasiArrayStyle, cardinality
 import Base: in, axes, getindex, broadcasted, tail, +, -, *, /, \, convert, OneTo, show, summary, ==, oneto
 import ContinuumArrays: Weight, grid, ℵ₁, ℵ₀, @simplify, Basis, basis, @simplify, Identity, AbstractAffineQuasiVector, AbstractQuasiArray, AbstractQuasiMatrix
-import ClassicalOrthogonalPolynomials: checkpoints, ldiv, paddeddata, jacobimatrix, orthogonalityweight, sqrtx2
+import ClassicalOrthogonalPolynomials: checkpoints, ldiv, paddeddata, jacobimatrix, orthogonalityweight, sqrtx2, Hilbert, Derivative
 import BlockArrays: block, blockindex, Block, _BlockedUnitRange, BlockSlice
 import BlockBandedMatrices: BlockTridiagonal, AbstractBlockBandedMatrix, blockbandwidths, subblockbandwidths
 import InfiniteArrays: OneToInf
@@ -25,7 +25,8 @@ export solvesvd, collocation_points, riemann, evaluate, expansion_sum_space, fra
             affinetransform, sum_space, appended_sum_space, dual_sum_space, 
             dual_sum_space2, sqrt_laplace_wT0, sqrt_laplace_U_1,
             ExtendedChebyshev, ExtendedChebyshevT, ExtendedChebyshevU, extendedchebyshevt, ExtendedWeightedChebyshevT, ExtendedWeightedChebyshevU,
-            SumSpace, SumSpaceP, SumSpaceD
+            SumSpace, SumSpaceP, SumSpaceD, 
+            Block, Derivative
 
 
 
