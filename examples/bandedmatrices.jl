@@ -1,3 +1,5 @@
+using Revise
+using SumSpaces
 using BlockBandedMatrices
 using LinearAlgebra
 import ClassicalOrthogonalPolynomials: ∞, BlockBroadcastArray, oneto, mortar
@@ -27,9 +29,3 @@ _BandedBlockBandedMatrix(Ones(∞,∞), Fill(2,∞), Fill(2,∞), (2,0), (0,0))
 
 using SumSpaces
 import ClassicalOrthogonalPolynomials: ∞, mortar, Diagonal, BlockBroadcastArray
-halfvec = mortar(Fill.(1/2,Fill(2,∞)))
-d = Diagonal((-1).^(2:∞))*halfvec
-zs = mortar(Zeros.(Fill(2,∞)))
-ld = Diagonal((-1).^(1:∞))*halfvec
-dat = BlockBroadcastArray(hcat,d,zs,ld)
-A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (0,0))

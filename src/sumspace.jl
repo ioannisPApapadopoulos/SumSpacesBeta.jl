@@ -127,7 +127,8 @@ end
 # Hilbert: Sp -> Sp 
 function *(H::Hilbert{<:Any,<:Any,<:Any}, Sp::SumSpace{1})
     T = eltype(Sp)
-    onevec = mortar(Fill.(1. ,Fill(2,∞)))
+    onevec = mortar(Fill.(convert(T, π) ,Fill(2,∞)))
+    zs = mortar(Zeros.(Fill(2,∞)))
     dat = BlockBroadcastArray(hcat,-onevec,zs,onevec)
     dat = BlockVcat(Fill(0,3)', dat)
     A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (0,0), (1,1))
