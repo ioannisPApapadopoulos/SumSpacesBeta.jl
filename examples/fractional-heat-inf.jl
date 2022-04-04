@@ -1,6 +1,5 @@
 using Revise
-using SumSpaces
-using Plots
+using SumSpaces, Plots
 import LinearAlgebra: I
 
 N = 21 # Truncation degree

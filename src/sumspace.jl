@@ -56,13 +56,15 @@ end
 ==(a::SumSpace, b::SumSpace) = false
 
 function getindex(S::SumSpace{1, E, T}, x::Real, j::Int)::T where {E, T}
-    isodd(j) && return ExtendedChebyshevT{T}()[x, (j ÷ 2)+1]
-    ExtendedWeightedChebyshevU{T}()[x, j ÷ 2]
+    y = affinetransform(S.I[1],S.I[2], x)
+    isodd(j) && return ExtendedChebyshevT{T}()[y, (j ÷ 2)+1]
+    ExtendedWeightedChebyshevU{T}()[y, j ÷ 2]
 end
 
 function getindex(S::SumSpace{2, E, T}, x::Real, j::Int)::T where {E, T}
-    isodd(j) && return ExtendedChebyshevU{T}()[x, (j ÷ 2)+1]
-    ExtendedWeightedChebyshevT{T}()[x, j ÷ 2]
+    y = affinetransform(S.I[1],S.I[2], x)
+    isodd(j) && return ExtendedChebyshevU{T}()[y, (j ÷ 2)+1]
+    ExtendedWeightedChebyshevT{T}()[y, j ÷ 2]
 end
 
 

@@ -47,14 +47,18 @@ function expansion_sum_space(c, Nn, N, el_no, constant)
     v = BlockArray(v, vcat(1,Fill(2,(length(v)-1)÷2)))
     if constant == true
         v[1] = c[1]
-        v[Block.(2:Nn+2)] = c[Block.(2:Nn+2)]
-        
-        # for e in 1:el_no
+        # v[Block.(2:Nn+2)] = c[Block.(2:Nn+2)]
+        for e in 1:el_no
+            v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[(e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2]
+        end
+        # for e in 1:el_no 
         #     v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e:(2*e-1)*Nn+2*e]
         #     v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e+1:2*e*Nn+2*e+1]
         # end
     else
-        v[Block.(2:Nn+2)] = c[Block.(2:Nn+2)]
+        for e in 1:el_no
+            v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[(e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2]
+        end
         # for e in 1:el_no
         #     v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e-1:(2*e-1)*Nn+2*e-1]
         #     v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e:2*e*Nn+2*e]
