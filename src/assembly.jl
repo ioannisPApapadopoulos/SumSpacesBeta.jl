@@ -1,15 +1,18 @@
-using BandedMatrices: _BandedMatrix
-using ClassicalOrthogonalPolynomials: Hcat, Vcat, ∞, ℵ₀, Ones, Zeros
-
 # Identity mapping from appended sum space to dual sum space
 function idmap_append2sum(N, yu0, yu_1, ywt0, ywt1; el_no=1)
     Id = I[1:2*N+3 + (el_no-1)*(2*N+2),1:2*N+3+(el_no-1)*(2*N+2)]
 
     for e in 1:el_no
-        Id = hcat(Id, yu_1[e])
-        Id = hcat(Id, yu0[e])
-        Id = hcat(Id, ywt0[e])
-        Id = hcat(Id, ywt1[e])
+        # Id = hcat(Id, yu_1[e])
+        # Id = hcat(Id, yu0[e])
+        # Id = hcat(Id, ywt0[e])
+        # Id = hcat(Id, ywt1[e])
+        
+        Id = hcat(yu0[e],Id)
+        Id = hcat(ywt1[e],Id)
+        Id = hcat(yu_1[e],Id)
+        Id = hcat(ywt0[e],Id)
+
     end
     return Id
 end

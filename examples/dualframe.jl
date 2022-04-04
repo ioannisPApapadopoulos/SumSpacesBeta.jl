@@ -19,9 +19,9 @@ x = collocation_points(M, Me, innergap=1e-10) # Collocation points
 Nn = min(N,5)
 A = dualframematrix(x, eU, ewT, Nn, M, Me)
 
-(w, yU0, yU_1, ywT0, ywT1) = supporter_functions(λ, μ)
-(yU0, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU0, yU_1, ywT0, ywT1)
-(yu0, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU0, yU_1, ywT0, ywT1, N+4, N+3, Nn+4, Nn+3)
+(w, yU_1, yU0, ywT0, ywT1) = supporter_functions(λ, μ)
+(yU_1, yU0, ywT0, ywT1) = interpolate_supporter_functions(w, yU_1, yU0, ywT0, ywT1)
+(yu_1, yu0, ywt0, ywt1) = columns_supporter_functions(A, x, yU_1, yU0, ywT0, ywT1, N+4, N+3, Nn+4, Nn+3)
 
 xx = -5:0.01:5
 plot(xx, yU0(xx))

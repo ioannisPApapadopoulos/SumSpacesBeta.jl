@@ -17,9 +17,9 @@ x = collocation_points(M, Me) # Collocation points
 Nn = min(N,7)
 A = framematrix(x, eT, ewU, Nn, M, Me)
 
-(w, yU0, yU_1, ywT0, ywT1) = supporter_functions(λ, μ)
-(yU0, yU_1, ywT0, ywT1) = interpolate_supporter_functions(w, yU0, yU_1, ywT0, ywT1)
-(yu0, yu_1, ywt0, ywt1) = columns_supporter_functions(A, x, yU0, yU_1, ywT0, ywT1, Nn, N)
+(w, yU_1, yU0, ywT0, ywT1) = supporter_functions(λ, μ)
+(yU_1, yU0, ywT0, ywT1) = interpolate_supporter_functions(w, yU_1, yU0, ywT0, ywT1)
+(yu_1, yu0, ywt0, ywt1) = columns_supporter_functions(A, x, yU_1, yU0, ywT0, ywT1, Nn, N)
 
 xx = -5:0.01:5
 plot!(xx, yU_1[1](xx))
