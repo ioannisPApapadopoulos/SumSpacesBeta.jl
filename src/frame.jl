@@ -49,7 +49,7 @@ function expansion_sum_space(c, Nn, N, el_no, constant)
         v[1] = c[1]
         # v[Block.(2:Nn+2)] = c[Block.(2:Nn+2)]
         for e in 1:el_no
-            v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[(e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2]
+            v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[Block.((e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2)]
         end
         # for e in 1:el_no 
         #     v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e:(2*e-1)*Nn+2*e]
@@ -57,7 +57,7 @@ function expansion_sum_space(c, Nn, N, el_no, constant)
         # end
     else
         for e in 1:el_no
-            v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[(e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2]
+            v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[Block.((e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2)]
         end
         # for e in 1:el_no
         #     v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e-1:(2*e-1)*Nn+2*e-1]
