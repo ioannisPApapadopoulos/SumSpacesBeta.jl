@@ -2,7 +2,7 @@ module SumSpaces
 
 using SpecialFunctions, LinearAlgebra, BlockBandedMatrices, BlockArrays, 
     ClassicalOrthogonalPolynomials, DomainSets, StaticArrays, ContinuumArrays, QuasiArrays,
-    FillArrays, ArrayLayouts, LazyBandedMatrices, LazyArrays, FFTW, Interpolations
+    FillArrays, ArrayLayouts, LazyBandedMatrices, LazyArrays, FFTW, Interpolations, InfiniteArrays
 
 
 import QuasiArrays: DefaultQuasiArrayStyle, cardinality
