@@ -2,7 +2,7 @@ using Revise
 using SumSpaces, Plots
 import LinearAlgebra: I
 
-N = 21 # Truncation degree
+N = 5 # Truncation degree
 λ = 1e2; μ = 0; Δt = 1/λ # Constants
 
 Sp = SumSpaceP() # Primal sum space

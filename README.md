@@ -50,8 +50,8 @@ julia> Sp[0.1, Block.(1:3)]
 # Operators
 
 Quasimatrix operators can be deduced via the same API as
-ClassicalOrthogonalPolynomials.jl. For example consider the
-quasimatrix, E, identity that maps the primal sum space to the
+ClassicalOrthogonalPolynomials.jl. For example consider the ℵ₀×ℵ₀
+matrix, E, that maps the primal sum space to the
 dual sum space such that Sp = Sd*E:
 ```julia
 julia> Sp = SumSpaceP(); Sd = SumSpaceD();
@@ -72,4 +72,38 @@ julia> Sd \ Sp
    ⋅   │    ⋅     ⋅   │   0.0   0.5  │  0.0   0.0  │  0.0  -0.5  │   ⋅    ⋅   │   ⋅    ⋅   │   ⋅    ⋅   │   ⋅    ⋅   │   ⋅    ⋅   │   ⋅
  ──────┼──────────────┼──────────────┼─────────────┼─────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼─────
   ⋮                            ⋮                          ⋮                        ⋮                        ⋱
+```
+
+# Expansion
+
+Finding the expansion of a function in the sum space is nontrivial.
+We utilize the framework of "frames". We first construct a Vandermonde
+matrix and then use a custom SVD solver to find the expansion.
+```julia
+julia> Sp = SumSpaceP(); N = 5; # degree
+julia> M = max(N^2,5001);  # Number of collocation points in [-1,1]
+julia> Me = M ÷ 10;  # Number of collocation points in [-2,-1) and (1,2].
+julia> x = collocation_points(M, Me); # Collocation points
+julia> A = framematrix([x], Sp, N, M, Me); # Blocked frame matrix
+julia> solvesvd(A, riemann(x, x->ExtendedChebyshevT()[x,2]))
+7-blocked 13-element BlockVector{Float64}:
+ -1.249000902703301e-16 
+ ───────────────────────
+  2.220446049250313e-16
+  1.0000000000000002
+ ───────────────────────
+  1.4432899320127035e-15
+ -6.661338147750939e-16
+ ───────────────────────
+ -1.7763568394002505e-15
+  3.219646771412954e-15
+ ───────────────────────
+ -9.992007221626409e-16
+ -2.9976021664879227e-15
+ ───────────────────────
+ -8.881784197001252e-16
+ -4.996003610813204e-16
+ ───────────────────────
+ -3.3306690738754696e-16
+  5.551115123125783e-16
 ```
