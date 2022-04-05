@@ -90,61 +90,14 @@ axes(ASp::AppendedSumSpace) = (Inclusion(ℝ), OneToInf())
 
 function getindex(ASp::AppendedSumSpace{AA, CC, E, T}, x::Real, j::Int)::T where {AA, CC, E, T}
 
-    if 1<=j<=4
-        return ASp.A[j][1](x)
+    if j == 1
+        return SumSpace{1, E, T}(ASp.I)[x,1]
+    elseif 2<=j<=5
+        return ASp.A[j-1][1](x)
     else
         return SumSpace{1, E, T}(ASp.I)[x,j-4]
     end
 end
-
-### 
-# Element primal sum space
-###
-
-struct ElementSumSpace{kind,E,T} <: Basis{T} 
-    I::E
-end
-ElementSumSpace{kind, T}(I::Vector{T}) where {kind, T} = ElementSumSpace{kind,Vector{T},T}(I::Vector{T})
-ElementSumSpace{kind}(I::Vector{Float64}) where kind = ElementSumSpace{kind,Float64}(I::Vector{Float64})
-ElementSumSpace{kind}() where kind = ElementSumSpace{kind}([-1.,1.])
-
-axes(ES::ElementSumSpace) = (Inclusion(ℝ), _BlockedUnitRange(1:(length(ES.I)-1):∞))
-
-function ==(a::ElementSumSpace{kind}, b::ElementSumSpace{kind}) where kind
-    if a.I == b.I 
-        return true
-    else
-        return false
-    end
-end
-==(a::ElementSumSpace, b::ElementSumSpace) = false
-
-function getindex(ES::ElementSumSpace{1, E, T}, x::Real, j::Int)::T where {E, T}
-
-    el_no = length(ES.I)-1
-    if j == 1
-        return SumSpace{1}()[x, 1]
-    else
-        ind = (j-2) ÷ el_no + 1
-        i = isodd(ind) ? (ind ÷ 2)+1 : ind ÷ 2
-        el = (j-1) - ((j-2) ÷ el_no)*el_no
-
-        y = affinetransform(ES.I[el],ES.I[el+1], x)
-        if isodd(ind)
-            return ExtendedWeightedChebyshevU{T}()[y, i]
-        else
-            return ExtendedChebyshevT{T}()[y, i+1]
-        end
-
-    
-    end
-end
-
-# function getindex(S::SumSpace{2, E, T}, x::Real, j::Int)::T where {E, T}
-#     y = affinetransform(S.I[1],S.I[2], x)
-#     isodd(j) && return ExtendedChebyshevU{T}()[y, (j ÷ 2)+1]
-#     ExtendedWeightedChebyshevT{T}()[y, j ÷ 2]
-# end
 
 
 ###
@@ -200,8 +153,9 @@ function \(Sd::SumSpace{2}, ASp::AppendedSumSpace)
     zs = Zeros(∞,4)
     B = vcat(B, zs)
     Id = hcat(B[1:2N+3,:], I[1:2N+3,1:2N+3])
-    A  = Bm * Id
 
+    Id = [Id[:,5] Id[:,1:4] Id[:,6:end]] # permute T0 column to start
+    A  = Bm * Id
     return A
 end
 
