@@ -27,7 +27,7 @@ export solvesvd, collocation_points, riemann, evaluate, expansion_sum_space, fra
             dual_sum_space2, sqrt_laplace_wT0, sqrt_laplace_U_1,
             ExtendedChebyshev, ExtendedChebyshevT, ExtendedChebyshevU, extendedchebyshevt, ExtendedWeightedChebyshevT, ExtendedWeightedChebyshevU,
             SumSpace, SumSpaceP, SumSpaceD, AppendedSumSpace, ElementSumSpace, ElementAppendedSumSpace,
-            Block, Derivative,
+            Block, Derivative, Fill, BlockArray,
             coefficient_interlace, coefficient_stack, Id_Sp_Sd
 
 

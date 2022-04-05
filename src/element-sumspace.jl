@@ -94,22 +94,24 @@ end
 ###
 
 function coefficient_interlace(c, N, el_no; append=false)
-    cskip = append==true ? 2N+7 : 2N+3
+    cskip = append==true ? 2N+6 : 2N+2
     v = zeros(length(c))
     v = BlockArray(v, vcat(1,Fill(el_no,(length(v)-1)÷el_no)))
     v[1] = c[1]
-    for j in 2:cskip
+    for j in 2:cskip+1
         v[Block.(j)] = c[j:cskip:end] 
     end
     return v
 end
 
-function coefficient_stack(c, N, append=false)
-    cskip = append==true ? 2N+7 : 2N+3
+function coefficient_stack(c, N, el_no; append=false)
+    cskip = append==true ? 2N+6 : 2N+2
     v = zeros(length(c))
-    v = BlockArray(v, vcat(1,Fill(2,(length(v)-1)÷2)))
+    v = BlockArray(v, vcat(cskip+1,Fill(cskip,el_no-1)))
     v[1] = c[1]
-    v[j:cskip:end] = c[Block.(j)]
+    for j in 2:cskip+1
+        v[j:cskip:end] = c[Block.(j)]
+    end
     return v
 end
 
@@ -194,7 +196,7 @@ function Id_Sp_Sd(ASp)
     ld = Diagonal(((-1).^((0:∞).÷el_no)) )*fracvec
     dat = BlockBroadcastArray(hcat,zs,ld)
     
-    dat = BlockBroadcastArray(hcat,-ld,zs,zs,zs,zs,zs,zs,zs,ld,zs,zs,zs)
+    dat = BlockBroadcastArray(hcat,ld,zs,zs,zs,zs,zs,zs,zs,-ld,zs,zs,zs)
     dat = BlockVcat([-1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,1.]', dat)
     A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (3,0))   
     return A
