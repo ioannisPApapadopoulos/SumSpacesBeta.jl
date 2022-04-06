@@ -92,15 +92,20 @@ end
 
 function columns_supporter_functions(A, x, yU_1, yU0, ywT0, ywT1, Nn, N; tol=1e-6, constant=true)
     el_no = length(yU0)
-    yu_1 = [solvesvd(A, riemann(x, yU_1[j]); tol=tol) for j in 1:el_no]
-    yu0 = [solvesvd(A, riemann(x, yU0[j]); tol=tol) for j in 1:el_no]
-    ywt0 = [solvesvd(A, riemann(x, ywT0[j]); tol=tol) for j in 1:el_no]
-    ywt1 = [solvesvd(A, riemann(x, ywT1[j]); tol=tol) for j in 1:el_no]
-    yyu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no, constant) for j in 1:el_no]
-    yyu0 = [expansion_sum_space(yu0[j], Nn, N, el_no, constant) for j in 1:el_no]
-    yywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no, constant) for j in 1:el_no]
-    yywt1 = [expansion_sum_space(ywt1[j], Nn, N, el_no, constant) for j in 1:el_no]
-    return (yyu_1, yyu0, yywt0, yywt1)
+    yu_1 = [solvesvd(A, evaluate(x, yU_1[j]); tol=tol) for j in 1:el_no]
+    yu0 = [solvesvd(A, evaluate(x, yU0[j]); tol=tol) for j in 1:el_no]
+    ywt0 = [solvesvd(A, evaluate(x, ywT0[j]); tol=tol) for j in 1:el_no]
+    ywt1 = [solvesvd(A, evaluate(x, ywT1[j]); tol=tol) for j in 1:el_no]
+    yu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no, constant) for j in 1:el_no]
+    yu0 = [expansion_sum_space(yu0[j], Nn, N, el_no, constant) for j in 1:el_no]
+    ywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no, constant) for j in 1:el_no]
+    ywt1 = [expansion_sum_space(ywt1[j], Nn, N, el_no, constant) for j in 1:el_no]
+    yu_1 = [coefficient_interlace(yu_1[j], N, el_no) for j = 1:el_no]
+    yu0 = [coefficient_interlace(yu0[j], N, el_no) for j = 1:el_no]
+    ywt0 = [coefficient_interlace(ywt0[j], N, el_no) for j = 1:el_no]
+    ywt1 = [coefficient_interlace(ywt1[j], N, el_no) for j = 1:el_no]
+
+    return (yu_1, yu0, ywt0, ywt1)
 end
 
 function fractional_heat_fourier_solve(F, t, timesteps)

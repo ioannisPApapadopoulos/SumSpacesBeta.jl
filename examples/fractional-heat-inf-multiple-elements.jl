@@ -8,7 +8,7 @@ N = 5 # Truncation degree
 Sp = SumSpaceP() # Primal sum space
 Sd = SumSpaceD() # Dual sum space
 
-a = [-2,-1.,1.,2]
+a = [-3,-1,1.,3]
 # a = [-1.,2.]
 el_no = length(a)-1
 
@@ -29,10 +29,6 @@ A = framematrix([x1,x2,x3], Sp, Nn, M, Me) # Blocked frame matrix
 (w, yU_1, yU0, ywT0, ywT1) = supporter_functions(λ, μ, a=a)
 (yU_1, yU0, ywT0, ywT1) = interpolate_supporter_functions(w, yU_1, yU0, ywT0, ywT1)
 (yu_1, yu0, ywt0, ywt1) = columns_supporter_functions(A, x, yU_1, yU0, ywT0, ywT1, Nn, N)
-yu_1 = [coefficient_interlace(yu_1[j], N, el_no) for j = 1:el_no]
-yu0 = [coefficient_interlace(yu0[j], N, el_no) for j = 1:el_no]
-ywt0 = [coefficient_interlace(ywt0[j], N, el_no) for j = 1:el_no]
-ywt1 = [coefficient_interlace(ywt1[j], N, el_no) for j = 1:el_no]
 
 xx = -5:0.01:5
 plot(xx, yU0[1](xx))
