@@ -1,5 +1,5 @@
 # Custom SVD solver for least squares problems
-function solvesvd(A, b; tol=1e-7)
+function solvesvd(A, b; tol=1e-7, block=true)
     A = A[1:end,1:end] # BlockBandedMatrices cannot do SVD
 
     U,S,V = svd(A)
@@ -8,7 +8,9 @@ function solvesvd(A, b; tol=1e-7)
     c = V * Diagonal(S⁺) * U' * b
 
     # Rearrange into block structure
-    c = BlockArray(c, vcat(1,Fill(2,(length(c)-1)÷2)))
+    if block == true
+        c = BlockArray(c, vcat(1,Fill(2,(length(c)-1)÷2)))
+    end
     return c
 end
 
