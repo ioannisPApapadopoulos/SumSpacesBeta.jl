@@ -90,17 +90,17 @@ function framematrix(x, Sp, Nn, M, Me)
 end
 
 # Construct Least Squares matrix for dual sum space
-function dualframematrix(x, eU, ewT, NeU, NwT, M, Me)
-    Tp = eltype(eU)
+# function dualframematrix(x, eU, ewT, NeU, NwT, M, Me)
+#     Tp = eltype(eU)
     
-    A = Matrix{Tp}(undef, M+2*Me, NeU + NwT)
-    A .= zero(Tp)
-    # Form columns of Least Squares matrix. 
-    for iter in 1:NeU
-        A[:,iter] = riemann(x, x -> eU[x,iter])
-    end
-    for iter in 1:NwT
-        A[:,NeU+iter] = riemann(x, x -> ewT[x,iter])
-    end
-    return A
-end
+#     A = Matrix{Tp}(undef, M+2*Me, NeU + NwT)
+#     A .= zero(Tp)
+#     # Form columns of Least Squares matrix. 
+#     for iter in 1:NeU
+#         A[:,iter] = riemann(x, x -> eU[x,iter])
+#     end
+#     for iter in 1:NwT
+#         A[:,NeU+iter] = riemann(x, x -> ewT[x,iter])
+#     end
+#     return A
+# end

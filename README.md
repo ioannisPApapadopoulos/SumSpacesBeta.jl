@@ -80,7 +80,7 @@ Finding the expansion of a function in the sum space is nontrivial.
 We utilize the framework of "frames". We first construct a Vandermonde
 matrix and then use a custom SVD solver to find the expansion.
 ```julia
-julia> Sp = SumSpaceP(); N = 2; # Truncationdegree
+julia> Sp = SumSpaceP(); N = 2; # Truncation degree
 julia> M = max(N^2,5001);  # Number of collocation points in [-1,1]
 julia> Me = M ÷ 10;  # Number of collocation points in [-2,-1) and (1,2].
 julia> x = collocation_points(M, Me); # Collocation points

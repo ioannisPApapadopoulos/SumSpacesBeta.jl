@@ -11,6 +11,12 @@ end
 function supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
     t=range(t0,-t0,step=dt)
     
+    # FIXME: Should probably find a nicer way around this
+    if μ ≈ 0 && real(λ) < 0 && λ ∈ t
+        λ += 1e2*eps() * π
+        @warn "μ ≈ 0, λ < 0, and λ ∈ Sample, we slightly perturb λ to avoid NaNs in the FFT computation in supporter_functions in cft.jl"
+    end
+
     ## Define function F[wT0] / (λ - i*μ*sgn(k)+  abs.(k))
     FwT0 = k -> pi * besselj.(0, abs.(k)) ./ (λ .- im.*μ.*sign.(k) .+ abs.(k))
     ## Define function F[wT1] / (λ - i*μ*sgn(k)+  abs.(k))
