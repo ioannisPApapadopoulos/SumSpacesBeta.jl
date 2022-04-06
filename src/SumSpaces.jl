@@ -23,14 +23,15 @@ include("sumspace.jl")
 include("element-sumspace.jl")
 
 export solvesvd, collocation_points, riemann, evaluate, expansion_sum_space, framematrix, dualframematrix, split_block_helmholtz_matrix, split_block_helmholtz_vector,      
-            supporter_functions, interpolate_supporter_functions, columns_supporter_functions, inverse_fourier_transform, fractional_heat_fourier_solve,
+            supporter_functions, interpolate_supporter_functions, coefficient_supporter_functions, inverse_fourier_transform, fractional_heat_fourier_solve,
             idmap_sum2dual, idmap_append2sum, idmap_append2dual, hilbertmap, diffmap, fractionalhelmholtzmap, fractionallaplacemap,
             affinetransform, sum_space, appended_sum_space, dual_sum_space, 
             dual_sum_space2, sqrt_laplace_wT0, sqrt_laplace_U_1,
             ExtendedChebyshev, ExtendedChebyshevT, ExtendedChebyshevU, extendedchebyshevt, ExtendedWeightedChebyshevT, ExtendedWeightedChebyshevU,
             SumSpace, SumSpaceP, SumSpaceD, AppendedSumSpace, ElementSumSpace, ElementAppendedSumSpace,
             Block, Derivative, Fill, BlockArray,
-            coefficient_interlace, coefficient_stack, Id_Sp_Sd
+            coefficient_interlace, coefficient_stack, Id_Sp_Sd,
+            fft_supporter_functions
 
 
 

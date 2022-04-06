@@ -70,32 +70,20 @@ end
 # Construct Least Squares matrix for sum space
 function framematrix(x, Sp, Nn, M, Me)
     Tp = eltype(Sp)
-    eltype(x) == Tp ? x=[x] : x=x
-
-    el = length(x)
-
-    # A = Matrix{Tp}(undef, M+2*Me, 2*Nn+3 + (el-1)*(2*Nn+2))
-    # A .= zero(Tp)
-
-    rows = [M+2*Me]; cols = vcat([1], Fill(2, el*(Nn+1)))
-    A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
-    # Form columns of Least Squares matrix. 
-
-    A[:,Block.(1)] = evaluate(x[1], x -> Sp[x,Block.(1)])
-    for els in 1:el
-        for iter in 2:Nn+2
-            # A[:,2*(els-1)*Nn+2*els-1+iter:2*(els-1)*Nn+2*els+iter] = riemann(x[els], x -> Sp[x,Block.(iter+1)])
-            A[:,Block.((els-1)*(Nn+1)+iter)] = evaluate(x[els], x -> Sp[x,Block.(iter)])
-        end
+    el = length(Sp.I) - 1
+    if typeof(Sp) == SumSpace{1, Vector{Tp}, Tp}
+        rows = [M+2*Me]; cols = vcat([1], Fill(2, el*(Nn+1)))
+    elseif typeof(Sp) == ElementSumSpace{1, Vector{Tp}, Tp}
+        rows = [M+2*Me]; cols = vcat([1], Fill(el, (2*Nn+2)))
+    else
+        error("Use either SumSpace{1} or ElementSumSpace{1}")
     end
+
+    # Create correct block structure
+    A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
     
-    # A[:,1] = riemann(x[1], x -> eT[x,1])
-    # for els in 1:el
-    #     for iter in 1:Nn+1
-    #         A[:,2*(els-1)*Nn+2*els-1+iter] = riemann(x[els], x -> eT[x,iter+1])
-    #         A[:,(2*els-1)*Nn+2*els+iter] = riemann(x[els], x -> ewU[x,iter])
-    #     end
-    # end
+    # Form columns of Least Squares matrix.
+    A[:,Block.(1:length(cols))] = evaluate(x, x->Sp[x, Block.(1:length(cols))])
     return A
 end
 

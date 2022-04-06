@@ -2,6 +2,10 @@ using Revise
 using SumSpaces, Plots
 import LinearAlgebra: I
 
+"""
+Solve the fractional heat equation with one element at [-1,1]. 
+"""
+
 N = 5 # Truncation degree
 λ = 1e2; μ = 0; Δt = 1/λ # Constants
 
@@ -13,20 +17,20 @@ Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me) # Collocation points
 Nn = min(N,7)
 
-A = framematrix([x], Sp, Nn, M, Me) # Blocked frame matrix
+A = framematrix(x, Sp, Nn, M, Me) # Blocked frame matrix
 
-# Helper functions for computing support functions
-(w, yU_1, yU0, ywT0, ywT1) = supporter_functions(λ, μ)
-(yU_1, yU0, ywT0, ywT1) = interpolate_supporter_functions(w, yU_1, yU0, ywT0, ywT1)
-(yu_1, yu0, ywt0, ywt1) = columns_supporter_functions(A, x, yU_1, yU0, ywT0, ywT1, Nn, N)
+# Compute support functions
+uS = fft_supporter_functions(λ, μ) # Actual functions
+# Primal sum space coefficients
+cuS = coefficient_supporter_functions(A, x, uS, Nn, N) 
 
 # Create appended sum space
-ASp = AppendedSumSpace((ywT0, yU_1, ywT1, yU0), (ywt0, yu_1, ywt1, yu0))
+ASp = AppendedSumSpace(uS, cuS)
 
-# Quick test
-xx = -5:0.01:5
-plot(xx, ywT0[1](xx))
-plot!(xx, Sp[xx,Block.(1:N+2)]*ywt0[1])
+# Sanity check plot
+# xx = -5:0.01:5
+# plot(xx, uS[1][1](xx))
+# plot!(xx, Sp[xx,Block.(1:N+2)]*cuS[1][1])
 
 
 x = axes(Sp, 1); H = inv.( x .- x')
@@ -67,13 +71,15 @@ end
 
 # Plot solution
 p = plot()
+# anim = @animate  for k = 2: timesteps+1
 for k = 1: timesteps+1
-    t = Δt*(k-1)
+    t = round(Δt*(k-1), digits=2)
     xx = -5:0.001:5
     yy = ASp[xx,1:length(u[k])]*u[k]
 
     xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
-    p = plot(xx,yy, label="time=$t (s)", legend=:topleft, xlim=xlim, ylim=ylim)
+    p = plot(xx,yy, title="time=$t (s)", label="Sum space - 1 element", legend=:topleft, xlim=xlim, ylim=ylim)
     sleep(0.1)
     display(p)
 end  
+# gif(anim, "anim_fps10.gif", fps = 10)

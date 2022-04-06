@@ -93,8 +93,8 @@ end
 # Helper functions
 ###
 
-function coefficient_interlace(c, N, el_no; append=false)
-    cskip = append==true ? 2N+6 : 2N+2
+function coefficient_interlace(c, N, el_no; appended=false)
+    cskip = appended==true ? 2N+6 : 2N+2
     v = zeros(length(c))
     v = BlockArray(v, vcat(1,Fill(el_no,(length(v)-1)÷el_no)))
     v[1] = c[1]
@@ -104,8 +104,8 @@ function coefficient_interlace(c, N, el_no; append=false)
     return v
 end
 
-function coefficient_stack(c, N, el_no; append=false)
-    cskip = append==true ? 2N+6 : 2N+2
+function coefficient_stack(c, N, el_no; appended=false)
+    cskip = appended==true ? 2N+6 : 2N+2
     v = zeros(length(c))
     v = BlockArray(v, vcat(cskip+1,Fill(cskip,el_no-1)))
     v[1] = c[1]
