@@ -80,30 +80,21 @@ Finding the expansion of a function in the sum space is nontrivial.
 We utilize the framework of "frames". We first construct a Vandermonde
 matrix and then use a custom SVD solver to find the expansion.
 ```julia
-julia> Sp = SumSpaceP(); N = 5; # degree
+julia> Sp = SumSpaceP(); N = 2; # Truncationdegree
 julia> M = max(N^2,5001);  # Number of collocation points in [-1,1]
 julia> Me = M ÷ 10;  # Number of collocation points in [-2,-1) and (1,2].
 julia> x = collocation_points(M, Me); # Collocation points
-julia> A = framematrix([x], Sp, N, M, Me); # Blocked frame matrix
-julia> solvesvd(A, riemann(x, x->ExtendedChebyshevT()[x,2]))
-7-blocked 13-element BlockVector{Float64}:
- -1.249000902703301e-16 
+julia> A = framematrix(x, Sp, N, M, Me); # Blocked frame matrix
+julia> solvesvd(A, evaluate(x, x->ExtendedChebyshevT()[x,2]))
+4-blocked 7-element BlockVector{Float64}:
+  9.71445146547012e-17  
  ───────────────────────
-  2.220446049250313e-16
-  1.0000000000000002
+ -9.43689570931383e-16
+  0.9999999999999991
  ───────────────────────
-  1.4432899320127035e-15
- -6.661338147750939e-16
- ───────────────────────
- -1.7763568394002505e-15
-  3.219646771412954e-15
- ───────────────────────
- -9.992007221626409e-16
- -2.9976021664879227e-15
- ───────────────────────
- -8.881784197001252e-16
- -4.996003610813204e-16
+  8.326672684688674e-16
+ -2.220446049250313e-16
  ───────────────────────
  -3.3306690738754696e-16
-  5.551115123125783e-16
+  2.636779683484747e-16
 ```
