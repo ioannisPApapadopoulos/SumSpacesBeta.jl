@@ -1,9 +1,14 @@
 # Custom SVD solver for least squares problems
 function solvesvd(A, b; tol=1e-7)
+    A = A[1:end,1:end] # BlockBandedMatrices cannot do SVD
+
     U,S,V = svd(A)
     S⁺ = inv.(S)[:]
     S⁺[S⁺ .> 1/tol] .= 0
     c = V * Diagonal(S⁺) * U' * b
+
+    # Rearrange into block structure
+    c = BlockArray(c, vcat(1,Fill(2,(length(c)-1)÷2)))
     return c
 end
 
@@ -39,42 +44,46 @@ end
 function expansion_sum_space(c, Nn, N, el_no, constant)
     # N1 = N+2; N2 = N+1; Nn1 = Nn+2; Nn2 = Nn+1; 
     v = zeros(1 + el_no*(2*N+2))
-    
+    v = BlockArray(v, vcat(1,Fill(2,(length(v)-1)÷2)))
     if constant == true
         v[1] = c[1]
+        # v[Block.(2:Nn+2)] = c[Block.(2:Nn+2)]
         for e in 1:el_no
-            v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e:(2*e-1)*Nn+2*e]
-            v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e+1:2*e*Nn+2*e+1]
+            v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[Block.((e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2)]
         end
+        # for e in 1:el_no 
+        #     v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e:(2*e-1)*Nn+2*e]
+        #     v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e+1:2*e*Nn+2*e+1]
+        # end
     else
         for e in 1:el_no
-            v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e-1:(2*e-1)*Nn+2*e-1]
-            v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e:2*e*Nn+2*e]
+            v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[Block.((e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2)]
         end
+        # for e in 1:el_no
+        #     v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e-1:(2*e-1)*Nn+2*e-1]
+        #     v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e:2*e*Nn+2*e]
+        # end
     end
     return v
 end
 
 # Construct Least Squares matrix for sum space
-function framematrix(x, eT, ewU, Nn, M, Me)
-    Tp = eltype(eT)
-    eltype(x) == Tp ? x=[x] : x=x
-
-    el = length(x)
-
-    A = Matrix{Tp}(undef, M+2*Me, 2*Nn+3 + (el-1)*(2*Nn+2))
-    A .= zero(Tp)
-    # Form columns of Least Squares matrix. 
-
-    A[:,1] = riemann(x[1], x -> eT[x,1])
-
-
-    for els in 1:el
-        for iter in 1:Nn+1
-            A[:,2*(els-1)*Nn+2*els-1+iter] = riemann(x[els], x -> eT[x,iter+1])
-            A[:,(2*els-1)*Nn+2*els+iter] = riemann(x[els], x -> ewU[x,iter])
-        end
+function framematrix(x, Sp, Nn, M, Me)
+    Tp = eltype(Sp)
+    el = length(Sp.I) - 1
+    if typeof(Sp) == SumSpace{1, Vector{Tp}, Tp}
+        rows = [M+2*Me]; cols = vcat([1], Fill(2, el*(Nn+1)))
+    elseif typeof(Sp) == ElementSumSpace{1, Vector{Tp}, Tp}
+        rows = [M+2*Me]; cols = vcat([1], Fill(el, (2*Nn+2)))
+    else
+        error("Use either SumSpace{1} or ElementSumSpace{1}")
     end
+
+    # Create correct block structure
+    A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
+    
+    # Form columns of Least Squares matrix.
+    A[:,Block.(1:length(cols))] = evaluate(x, x->Sp[x, Block.(1:length(cols))])
     return A
 end
 

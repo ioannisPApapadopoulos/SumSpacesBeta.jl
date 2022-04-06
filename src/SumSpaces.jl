@@ -1,16 +1,18 @@
 module SumSpaces
 
 using SpecialFunctions, LinearAlgebra, BlockBandedMatrices, BlockArrays, 
-    ClassicalOrthogonalPolynomials, DomainSets, StaticArrays, ContinuumArrays, QuasiArrays,
-    FillArrays, ArrayLayouts, LazyBandedMatrices, LazyArrays, FFTW, Interpolations, InfiniteArrays
+    ClassicalOrthogonalPolynomials, StaticArrays, ContinuumArrays, DomainSets,
+    FillArrays, LazyBandedMatrices, LazyArrays, FFTW, Interpolations, InfiniteArrays,
+    QuasiArrays
+    # ArrayLayouts, 
 
 
-import QuasiArrays: DefaultQuasiArrayStyle, cardinality
+# import QuasiArrays: DefaultQuasiArrayStyle, cardinality
 import Base: in, axes, getindex, broadcasted, tail, +, -, *, /, \, convert, OneTo, show, summary, ==, oneto
 import ContinuumArrays: Weight, grid, ℵ₁, ℵ₀, @simplify, Basis, basis, @simplify, Identity, AbstractAffineQuasiVector, AbstractQuasiArray, AbstractQuasiMatrix
-import ClassicalOrthogonalPolynomials: checkpoints, ldiv, paddeddata, jacobimatrix, orthogonalityweight, sqrtx2, Hilbert, Derivative
-import BlockArrays: block, blockindex, Block, _BlockedUnitRange, BlockSlice
-import BlockBandedMatrices: BlockTridiagonal, AbstractBlockBandedMatrix, blockbandwidths, subblockbandwidths
+import ClassicalOrthogonalPolynomials: sqrtx2, Hilbert, Derivative #checkpoints, ldiv, paddeddata, jacobimatrix, orthogonalityweight, 
+import BlockArrays: block, blockindex, Block, _BlockedUnitRange#, BlockSlice
+import BlockBandedMatrices: _BandedBlockBandedMatrix #BlockTridiagonal, AbstractBlockBandedMatrix, blockbandwidths, subblockbandwidths
 import InfiniteArrays: OneToInf
 
 include("frame.jl")
@@ -18,15 +20,18 @@ include("cft.jl")
 include("assembly.jl")
 include("extendedchebyshev.jl")
 include("sumspace.jl")
+include("element-sumspace.jl")
 
 export solvesvd, collocation_points, riemann, evaluate, expansion_sum_space, framematrix, dualframematrix, split_block_helmholtz_matrix, split_block_helmholtz_vector,      
-            supporter_functions, interpolate_supporter_functions, columns_supporter_functions, inverse_fourier_transform, fractional_heat_fourier_solve,
+            supporter_functions, interpolate_supporter_functions, coefficient_supporter_functions, inverse_fourier_transform, fractional_heat_fourier_solve,
             idmap_sum2dual, idmap_append2sum, idmap_append2dual, hilbertmap, diffmap, fractionalhelmholtzmap, fractionallaplacemap,
             affinetransform, sum_space, appended_sum_space, dual_sum_space, 
             dual_sum_space2, sqrt_laplace_wT0, sqrt_laplace_U_1,
             ExtendedChebyshev, ExtendedChebyshevT, ExtendedChebyshevU, extendedchebyshevt, ExtendedWeightedChebyshevT, ExtendedWeightedChebyshevU,
-            SumSpace, SumSpaceP, SumSpaceD, 
-            Block, Derivative
+            SumSpace, SumSpaceP, SumSpaceD, AppendedSumSpace, ElementSumSpace, ElementAppendedSumSpace,
+            Block, Derivative, Fill, BlockArray,
+            coefficient_interlace, coefficient_stack, Id_Sp_Sd,
+            fft_supporter_functions
 
 
 

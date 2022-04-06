@@ -70,7 +70,7 @@ function supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
     # yU_1 = ifftshift(ifft(sFU_1(t)))
     # yU_1 = yU_1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
 
-    return (w[2:end], yU0, yU_1, ywT0, ywT1)
+    return (w[2:end], ywT0, yU_1, ywT1, yU0) 
 end
 
 function cifft(f, t, dt, t0, w)
@@ -79,28 +79,33 @@ function cifft(f, t, dt, t0, w)
     return yf
 end
 
-
-
-function interpolate_supporter_functions(w, yU0, yU_1, ywT0, ywT1)
-    el_no = length(yU0)
-    yyU0 = [interpolate((w,), real.(yU0[j]), Gridded(Linear())) for j in 1:el_no]
-    yyU_1 = [interpolate((w,), real.(yU_1[j]), Gridded(Linear())) for j in 1:el_no]
-    yywT0 = [interpolate((w,), real.(ywT0[j]), Gridded(Linear())) for j in 1:el_no]
-    yywT1 = [interpolate((w,), real.(ywT1[j]), Gridded(Linear())) for j in 1:el_no]
-    return (yyU0, yyU_1, yywT0, yywT1)
+function interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
+    el_no = length(yU_1)
+    yU_1 = [interpolate((w,), real.(yU_1[j]), Gridded(Linear())) for j in 1:el_no]
+    yU0 = [interpolate((w,), real.(yU0[j]), Gridded(Linear())) for j in 1:el_no]
+    ywT0 = [interpolate((w,), real.(ywT0[j]), Gridded(Linear())) for j in 1:el_no]
+    ywT1 = [interpolate((w,), real.(ywT1[j]), Gridded(Linear())) for j in 1:el_no]
+    return (ywT0, yU_1, ywT1, yU0)
 end
 
-function columns_supporter_functions(A, x, yU0, yU_1, ywT0, ywT1, Nn, N; tol=1e-6, constant=true)
+function fft_supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
+    (w, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, t0=t0, dt=dt, a=a)
+    uS = interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
+    return uS
+end
+
+function coefficient_supporter_functions(A, x, uS, Nn, N; tol=1e-6, constant=true)
+    (ywT0, yU_1, ywT1, yU0) = uS
     el_no = length(yU0)
-    yu_1 = [solvesvd(A, riemann(x, yU_1[j]); tol=tol) for j in 1:el_no]
-    yu0 = [solvesvd(A, riemann(x, yU0[j]); tol=tol) for j in 1:el_no]
-    ywt0 = [solvesvd(A, riemann(x, ywT0[j]); tol=tol) for j in 1:el_no]
-    ywt1 = [solvesvd(A, riemann(x, ywT1[j]); tol=tol) for j in 1:el_no]
-    yyu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no, constant) for j in 1:el_no]
-    yyu0 = [expansion_sum_space(yu0[j], Nn, N, el_no, constant) for j in 1:el_no]
-    yywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no, constant) for j in 1:el_no]
-    yywt1 = [expansion_sum_space(ywt1[j], Nn, N, el_no, constant) for j in 1:el_no]
-    return (yyu0, yyu_1, yywt0, yywt1)
+    yu_1 = [solvesvd(A, evaluate(x, yU_1[j]); tol=tol) for j in 1:el_no]
+    yu0 = [solvesvd(A, evaluate(x, yU0[j]); tol=tol) for j in 1:el_no]
+    ywt0 = [solvesvd(A, evaluate(x, ywT0[j]); tol=tol) for j in 1:el_no]
+    ywt1 = [solvesvd(A, evaluate(x, ywT1[j]); tol=tol) for j in 1:el_no]
+    yu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no, constant) for j in 1:el_no]
+    yu0 = [expansion_sum_space(yu0[j], Nn, N, el_no, constant) for j in 1:el_no]
+    ywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no, constant) for j in 1:el_no]
+    ywt1 = [expansion_sum_space(ywt1[j], Nn, N, el_no, constant) for j in 1:el_no]
+    return (ywt0, yu_1, ywt1, yu0)
 end
 
 function fractional_heat_fourier_solve(F, t, timesteps)
