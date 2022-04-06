@@ -27,7 +27,7 @@ function getindex(ES::ElementSumSpace{1, E, T}, x::Real, j::Int)::T where {E, T}
     if j == 1
         return SumSpace{1}()[x, 1]
     else
-        ind = (j-2) ÷ el_no + 1                # Block number
+        ind = (j-2) ÷ el_no + 1                # Block number - 1
         i = isodd(ind) ? (ind ÷ 2)+1 : ind ÷ 2 # Poly/function order
         el = (j-1) - ((j-2) ÷ el_no)*el_no     # Element number
 
@@ -133,7 +133,7 @@ function *(H::Hilbert{<:Any,<:Any,<:Any}, Sp::ElementSumSpace{1})
     zs = mortar(Zeros.(Fill(2,∞)))
     dat = BlockBroadcastArray(hcat,-onevec,zs,onevec)
     dat = BlockVcat(Fill(0,3)', dat)
-    A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (0,0), (1,1))
+    A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (0,0), (1,1))
     return ApplyQuasiMatrix(*, ElementSumSpace{1,T}(Sp.I), A)
 end
 
@@ -151,7 +151,7 @@ function *(D::Derivative{<:Real}, Sp::ElementSumSpace{1})
 
         dat = BlockBroadcastArray(hcat,zs,ld)
         dat = BlockVcat(Fill(0,2)', dat)
-        append!(A, [BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (1,0), (0,0))])
+        append!(A, [_BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (1,0), (0,0))])
     end
     return [ApplyQuasiMatrix(*, ElementSumSpace{2,T}(Sp.I), A[j]) for j in 1:el_no]
 end
@@ -198,6 +198,6 @@ function Id_Sp_Sd(ASp)
     
     dat = BlockBroadcastArray(hcat,ld,zs,zs,zs,zs,zs,zs,zs,-ld,zs,zs,zs)
     dat = BlockVcat([-1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,1.]', dat)
-    A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (3,0))   
+    A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (3,0))   
     return A
 end

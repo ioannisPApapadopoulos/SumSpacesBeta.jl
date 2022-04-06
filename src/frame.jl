@@ -81,7 +81,7 @@ function framematrix(x, Sp, Nn, M, Me)
     A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
     # Form columns of Least Squares matrix. 
 
-    A[:,Block.(1)] = riemann(x[1], x -> Sp[x,Block.(1)])
+    A[:,Block.(1)] = riemann(x[2], x -> Sp[x,Block.(1)])
     for els in 1:el
         for iter in 2:Nn+2
             # A[:,2*(els-1)*Nn+2*els-1+iter:2*(els-1)*Nn+2*els+iter] = riemann(x[els], x -> Sp[x,Block.(iter+1)])

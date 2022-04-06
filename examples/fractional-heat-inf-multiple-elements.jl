@@ -8,13 +8,14 @@ N = 5 # Truncation degree
 Sp = SumSpaceP() # Primal sum space
 Sd = SumSpaceD() # Dual sum space
 
-a = [-3,-1.,1.,3]
+a = [-2,-1.,1.,2]
+# a = [-1.,2.]
 el_no = length(a)-1
 
 
 M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
-x = collocation_points(M, Me) # Collocation points
+x = collocation_points(M, Me, innergap=1e-5, endpoints=10) # Collocation points
 x1 = affinetransform(a[1],a[2],x)
 x2 = affinetransform(a[2],a[3],x)
 x3 = affinetransform(a[3],a[4],x)
@@ -35,10 +36,11 @@ ywt1 = [coefficient_interlace(ywt1[j], N, el_no) for j = 1:el_no]
 
 xx = -5:0.01:5
 plot(xx, yU0[1](xx))
+# plot!(xx, yU0[2](xx))
 eSp = ElementSumSpace{1}(a)
 eSd = ElementSumSpace{2}(a)
 
-y = eSp[xx,1:length(yu0[1])]*coefficient_interlace(yu0[1], N, el_no)
+y = eSp[xx,1:length(yu0[1])]*yu0[1]
 plot!(xx, y)
 
 # Create appended sum space

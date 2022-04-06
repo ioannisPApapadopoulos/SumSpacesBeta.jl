@@ -115,7 +115,7 @@ function \(Sd::SumSpace{2}, Sp::SumSpace{1})
     ld = Diagonal((-1).^(1:∞))*halfvec
     dat = BlockBroadcastArray(hcat,d,zs,zs,zs,ld,zs)
     dat = BlockVcat([-1.,0.,0.,0.,0.,1.]', dat)
-    A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (1,0))
+    A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (1,0))
     
     # Timon's version, also gives what I want but with the incorrect block structure
     # halfvec = mortar(Ones.(Fill(2,∞)))
@@ -123,7 +123,7 @@ function \(Sd::SumSpace{2}, Sp::SumSpace{1})
     # zs = mortar(Zeros.(Fill(2,∞)))
     # ld = Diagonal((-1).^(2:∞)./(2 .^[0;ones(∞)]))*halfvec
     # dat = BlockBroadcastArray(hcat,d,zs,ld)
-    # A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (0,0))
+    # A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (0,0))
     return A
 end
 
@@ -170,7 +170,7 @@ function *(D::Derivative{<:Real}, Sp::SumSpace{1})
 
     dat = BlockBroadcastArray(hcat,zs,ld)
     dat = BlockVcat(Fill(0,2)', dat)
-    A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (1,0), (0,0))
+    A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (1,0), (0,0))
     return ApplyQuasiMatrix(*, SumSpace{2,T}(Sp.I), A)
 end
 
@@ -184,7 +184,7 @@ end
 #     # dat = BlockBroadcastArray(hcat,onevec,2*onevec,3*onevec,4*onevec,5*onevec,6*onevec,7*onevec,8*onevec,9*onevec)
 #     dat = BlockBroadcastArray(hcat,d,zs,ld,zs,zs,zs,ld,zs,d)
 #     dat = BlockVcat(Fill(0,9)', dat)
-#     A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (1,1))
+#     A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (1,1))
 #     return ApplyQuasiMatrix(*, SumSpace{2,T}(Sp.I), A)
 # end
 
@@ -195,6 +195,6 @@ function *(H::Hilbert{<:Any,<:Any,<:Any}, Sp::SumSpace{1})
     zs = mortar(Zeros.(Fill(2,∞)))
     dat = BlockBroadcastArray(hcat,-onevec,zs,onevec)
     dat = BlockVcat(Fill(0,3)', dat)
-    A = BlockBandedMatrices._BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (0,0), (1,1))
+    A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (0,0), (1,1))
     return ApplyQuasiMatrix(*, SumSpace{1,T}(Sp.I), A)
 end

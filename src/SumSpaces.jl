@@ -1,16 +1,18 @@
 module SumSpaces
 
 using SpecialFunctions, LinearAlgebra, BlockBandedMatrices, BlockArrays, 
-    ClassicalOrthogonalPolynomials, DomainSets, StaticArrays, ContinuumArrays, QuasiArrays,
-    FillArrays, ArrayLayouts, LazyBandedMatrices, LazyArrays, FFTW, Interpolations, InfiniteArrays
+    ClassicalOrthogonalPolynomials, StaticArrays, ContinuumArrays, DomainSets,
+    FillArrays, LazyBandedMatrices, LazyArrays, FFTW, Interpolations, InfiniteArrays,
+    QuasiArrays
+    # ArrayLayouts, 
 
 
-import QuasiArrays: DefaultQuasiArrayStyle, cardinality
+# import QuasiArrays: DefaultQuasiArrayStyle, cardinality
 import Base: in, axes, getindex, broadcasted, tail, +, -, *, /, \, convert, OneTo, show, summary, ==, oneto
 import ContinuumArrays: Weight, grid, ℵ₁, ℵ₀, @simplify, Basis, basis, @simplify, Identity, AbstractAffineQuasiVector, AbstractQuasiArray, AbstractQuasiMatrix
-import ClassicalOrthogonalPolynomials: checkpoints, ldiv, paddeddata, jacobimatrix, orthogonalityweight, sqrtx2, Hilbert, Derivative
-import BlockArrays: block, blockindex, Block, _BlockedUnitRange, BlockSlice
-import BlockBandedMatrices: BlockTridiagonal, AbstractBlockBandedMatrix, blockbandwidths, subblockbandwidths
+import ClassicalOrthogonalPolynomials: sqrtx2, Hilbert, Derivative #checkpoints, ldiv, paddeddata, jacobimatrix, orthogonalityweight, 
+import BlockArrays: block, blockindex, Block, _BlockedUnitRange#, BlockSlice
+import BlockBandedMatrices: _BandedBlockBandedMatrix #BlockTridiagonal, AbstractBlockBandedMatrix, blockbandwidths, subblockbandwidths
 import InfiniteArrays: OneToInf
 
 include("frame.jl")
