@@ -35,7 +35,8 @@ function affinetransform(a,b,x)
     y = 2/(b-a) .* (x.-(a+b)/2)
 end
 
-sqrt_laplace_wT0 = xx -> [abs(x) <= 1 ? 0.5*log(4)-Base.MathConstants.eulergamma : 0.5*log(4)-Base.MathConstants.eulergamma-asinh(sqrt(x^2-1)) for x in xx]
-sqrt_laplace_U_1 = xx -> [abs(x) <= 1 ? -asin(x) : -sign(x)*pi/2 for x in xx]
-
+half_laplace_wT0 = xx -> [abs(x) <= 1 ? log(2)-Base.MathConstants.eulergamma : log(2)-Base.MathConstants.eulergamma-asinh(sqrt(x^2-1)) for x in xx]
+half_laplace_wT1 = xx -> ExtendedChebyshevT()[xx,2]
+half_laplace_U_1 = xx -> [abs(x) <= 1 ? -asin(x) : -sign(x)*pi/2 for x in xx]
+half_laplace_U0 = xx -> ExtendedWeightedChebyshevU()[xx,1]
 end # module

@@ -10,7 +10,7 @@ end
 
 function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
     t=range(t0,-t0,step=dt)
-    
+
     # FIXME: Should probably find a nicer way around this
     if μ ≈ 0 && real(λ) < 0 && λ ∈ t
         λ += 1e2*eps() * π
@@ -48,12 +48,14 @@ function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
     # λ = μ = 0, η = -1 FU0(0) → c ∓ ic; λ = μ = 0, η = 1 FU0(0) → c ± ic, where c finite
     # λ = μ = η = 0, FU0(0) = c
     # NaNs if λ = 0, but rest can be set to 0.
-    tFU0 = k -> pi * besselj.(1, abs.(k)) ./ fmultiplier(k)
-    if λ ≈ 0
-        FU0 = k -> [fmultiplier(m) ≈ 0 ? (tFU0(-eps())+tFU0(eps()))/2 : tFU0(m)  for m in k]
-    else
-        FU0 = k -> tFU0(k)
-    end
+    
+    tFU0 = k -> (pi * besselj.(1, abs.(k)) + 2 .*sin.(k)./k - 2 .* sin.(abs.(k)) ./ abs.(k)) ./ fmultiplier(k)
+    # if λ ≈ 0
+    #     FU0 = k -> [fmultiplier(m) ≈ 0 ? (tFU0(-eps())+tFU0(eps()))/2 : tFU0(m)  for m in k]
+    # else
+    #     FU0 = k -> tFU0(k)
+    # end
+    FU0 = k -> [m ≈ 0 ? (tFU0(-eps())+tFU0(eps()))/2 : tFU0(m)  for m in k]
     
     ## Define function F[U-1] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
     tFU_1 = k -> ( im*pi*k.*besselj.(0,abs.(k)) ./ abs.(k)) ./ fmultiplier(k)
@@ -129,6 +131,18 @@ function interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
 end
 
 function fft_supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
+    # Special case analytical expressions
+    if λ == μ == η ≈ 0
+        ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
+        for els = 1 : length(a)-1
+            append!(ywT0, [x->half_laplace_wT0(affinetransform(a[els], a[els+1], x))])
+            append!(ywT1, [x->half_laplace_wT1(affinetransform(a[els], a[els+1], x))])
+            append!(yU0, [x->half_laplace_U0(affinetransform(a[els], a[els+1], x))])
+            append!(yU_1, [x->half_laplace_U_1(affinetransform(a[els], a[els+1], x))])
+            return (ywT0, yU_1, ywT1, yU0)
+        end
+    end 
+    
     (w, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, t0=t0, dt=dt, a=a)
     uS = interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
     return uS
