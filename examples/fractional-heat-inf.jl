@@ -7,7 +7,7 @@ Solve the fractional heat equation with one element at [-1,1].
 """
 
 N = 5 # Truncation degree
-λ = 1e2; μ = 0; Δt = 1/λ # Constants
+λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
 Sp = SumSpaceP() # Primal sum space
 Sd = SumSpaceD() # Dual sum space
@@ -20,7 +20,7 @@ Nn = min(N,7)
 A = framematrix(x, Sp, Nn, M, Me) # Blocked frame matrix
 
 # Compute support functions
-uS = fft_supporter_functions(λ, μ) # Actual functions
+uS = fft_supporter_functions(λ, μ, η) # Actual functions
 # Primal sum space coefficients
 cuS = coefficient_supporter_functions(A, x, uS, Nn, N) 
 

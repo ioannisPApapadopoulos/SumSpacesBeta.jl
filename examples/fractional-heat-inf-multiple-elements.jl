@@ -8,7 +8,7 @@ Solve the fractional heat equation with 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,
 
 
 N = 5 # Truncation degree
-λ = 1e2; μ = 0; Δt = 1/λ # Constants
+λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
 a = [-3,-1,1.,3] # 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3]
 el_no = length(a)-1
@@ -25,7 +25,7 @@ Nn = min(N,11) # Truncation degree to approximate the supporter functions
 A = framematrix(x, eSp, Nn, M, Me) # Blocked frame matrix
 
 # Compute support functions
-uS = fft_supporter_functions(λ, μ, a=a) # Actual functions
+uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
 # Element primal sum space coefficients
 cuS = coefficient_supporter_functions(A, x, uS, Nn, N) 
 

@@ -8,7 +8,7 @@ function inverse_fourier_transform(F, t; t0=-1000, dt=0.001)
 end
 
 
-function supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
+function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
     t=range(t0,-t0,step=dt)
     
     # FIXME: Should probably find a nicer way around this
@@ -17,14 +17,48 @@ function supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
         @warn "μ ≈ 0, λ < 0, and λ ∈ Sample, we slightly perturb λ to avoid NaNs in the FFT computation in supporter_functions in cft.jl"
     end
 
-    ## Define function F[wT0] / (λ - i*μ*sgn(k)+  abs.(k))
-    FwT0 = k -> pi * besselj.(0, abs.(k)) ./ (λ .- im.*μ.*sign.(k) .+ abs.(k))
-    ## Define function F[wT1] / (λ - i*μ*sgn(k)+  abs.(k))
-    FwT1 = k -> -im * pi * besselj.(1, k) ./ (λ .- im.*μ.*sign.(k) .+ abs.(k))
-    ## Define function F[U0] / (λ - i*μ*sgn(k)+  abs.(k))
-    FU0 = k -> pi * besselj.(1, abs.(k)) ./ (λ .- im.*μ.*sign.(k) .+ abs.(k))
-    ## Define function F[U-1] / (λ - i*μ*sgn(k)+  abs.(k))
-    FU_1 = k -> [m ≈ 0 ? ComplexF64(0.) : ComplexF64(im*pi*m.*besselj.(0,abs.(m)) ./ abs.(m)) ./ (λ .- im.*μ.*sign.(m) .+ abs.(m)) for m in k]
+    fmultiplier = k -> (λ .- im.*μ.*sign.(k) .+im.*η.*k .+ abs.(k))
+    
+    # For certain values of λ, μ and η, fmultiplier can be equal to 0. This causes
+    # NaNs in the ifft routine. To avoid this we watch if fmultiplier=0 and if it does
+    # then we average the Fourier transform around 0 to get an approximate of the limit.
+    # FIXME: These list comprehensions are slow, can we speed it up? 
+
+    ## Define function F[wT0] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
+    # λ = μ = 0, η = -1 FwT0(0) → ∞; λ = μ = 0, η = 1 FwT0(0) → ∞ ± i∞
+    # NaNs if λ = 0, but rest can be set to 0.
+    tFwT0 = k -> pi * besselj.(0, abs.(k)) ./ fmultiplier(k)
+    if λ ≈ 0
+        FwT0 = k -> [fmultiplier(m) ≈ 0 ? (tFwT0(-eps())+tFwT0(eps()))/2 : tFwT0(m)  for m in k]
+    else
+        FwT0 = k -> tFwT0(k)
+    end
+    
+    ## Define function F[wT1] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
+    # λ = μ = 0, η = -1 FwT1(0) → c; λ = μ = 0, η = 1 FwT1(0) → c ± ic, where c finite
+    # λ = μ = η = 0, FwT1(0) = ± c
+    # NaNs if λ = 0, but rest can be set to 0.
+    tFwT1 = k -> -im * pi * besselj.(1, k) ./ fmultiplier(k)
+    if λ ≈ 0
+        FwT1 = k -> [fmultiplier(m) ≈ 0 ? (tFwT1(-eps())+tFwT1(eps()))/2 : tFwT1(m)  for m in k]
+    else
+        FwT1 = k -> tFwT1(k)
+    end
+    ## Define function F[U0] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
+    # λ = μ = 0, η = -1 FU0(0) → c ∓ ic; λ = μ = 0, η = 1 FU0(0) → c ± ic, where c finite
+    # λ = μ = η = 0, FU0(0) = c
+    # NaNs if λ = 0, but rest can be set to 0.
+    tFU0 = k -> pi * besselj.(1, abs.(k)) ./ fmultiplier(k)
+    if λ ≈ 0
+        FU0 = k -> [fmultiplier(m) ≈ 0 ? (tFU0(-eps())+tFU0(eps()))/2 : tFU0(m)  for m in k]
+    else
+        FU0 = k -> tFU0(k)
+    end
+    
+    ## Define function F[U-1] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
+    tFU_1 = k -> ( im*pi*k.*besselj.(0,abs.(k)) ./ abs.(k)) ./ fmultiplier(k)
+    # FU_1 = k -> [m ≈ 0 ? ComplexF64(0.) : ComplexF64(im*pi*m.*besselj.(0,abs.(m)) ./ abs.(m)) ./ fmultiplier(m) for m in k]
+    FU_1 = k -> [m ≈ 0 ? (tFU_1(-eps())+tFU_1(eps()))/2 : tFU_1(m)  for m in k]
     
     # Old code to find support solutions via a Hilbert transform first. 
     ## Define function F[wT1] / (-i*λ*sign.(k) - μ - i*k)
@@ -94,8 +128,8 @@ function interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
     return (ywT0, yU_1, ywT1, yU0)
 end
 
-function fft_supporter_functions(λ, μ; t0=-1000., dt=0.001, a=[-1.,1.])
-    (w, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, t0=t0, dt=dt, a=a)
+function fft_supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
+    (w, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, t0=t0, dt=dt, a=a)
     uS = interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
     return uS
 end
