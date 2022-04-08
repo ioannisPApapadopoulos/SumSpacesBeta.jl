@@ -26,6 +26,7 @@ function collocation_points(M, Me; endpoints=5, innergap = 0, outergap=1e-5)
     Tp = Float64
     x = Array{Tp}(undef,M+2*Me)
     x[1:M] = LinRange{Tp}(-1+innergap,1-innergap,M)
+    # x[1:M] = LinRange{Tp}(0+innergap,1-innergap,M)
     # x[1:M] = cos.(π.*x[1:M])
     x[M+1:M+Me] = LinRange{Tp}(-endpoints,-1-outergap,Me)
     x[M+1+Me:M+2*Me] = LinRange{Tp}(1+outergap,endpoints,Me)
@@ -102,19 +103,3 @@ function dualframematrix(x, Sd, Nn, M, Me)
     A[:,Block.(1:length(cols))] = riemann(x, x->Sd[x, Block.(1:length(cols))])
     return A
 end
-
-# Construct Least Squares matrix for dual sum space
-# function dualframematrix(x, eU, ewT, NeU, NwT, M, Me)
-#     Tp = eltype(eU)
-    
-#     A = Matrix{Tp}(undef, M+2*Me, NeU + NwT)
-#     A .= zero(Tp)
-#     # Form columns of Least Squares matrix. 
-#     for iter in 1:NeU
-#         A[:,iter] = riemann(x, x -> eU[x,iter])
-#     end
-#     for iter in 1:NwT
-#         A[:,NeU+iter] = riemann(x, x -> ewT[x,iter])
-#     end
-#     return A
-# end
