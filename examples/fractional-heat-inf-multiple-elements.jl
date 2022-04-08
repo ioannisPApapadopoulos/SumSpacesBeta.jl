@@ -41,7 +41,7 @@ ASp = ElementAppendedSumSpace(uS, cuS, a)
 # Create matrix for element 1
 Id = (eSd \ ASp)[1:2N+7+(el_no-1)*(2N+6),1:2N+7+(el_no-1)*(2N+6)]
 
-x = axes(Sp, 1); H = inv.( x .- x')
+x = axes(eSp, 1); H = inv.( x .- x')
 Hm = (1/π).*((eSp\(H*eSp))[1:2N+3,1:2N+3])    # Hilbert: Sp -> Sp
 Cm = [(eSd\(Derivative(x)*eSp)[j])[1:2N+7,1:2N+3] for j in 1:el_no]# Derivative: Sp -> Sd
 Bm = (eSd\eSp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
