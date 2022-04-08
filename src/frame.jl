@@ -12,7 +12,11 @@ function solvesvd(A, b; tol=1e-7, block=true)
     if block == true
         # FIXME: Get correct block structure in output vector
         el_no = length(A[1, Block.(2)])
-        c = BlockArray(c, vcat(1,Fill(2,(length(c)-1)÷2)))
+        if el_no == 1
+            c = BlockArray(c, vcat(1,Fill(2,(length(c)-1)÷2)))
+        else
+            c = BlockArray(c, vcat(1,Fill(el_no,(length(c)-1)÷el_no)))
+        end
     end
     return c
 end
@@ -22,6 +26,7 @@ function collocation_points(M, Me; endpoints=5, innergap = 0, outergap=1e-5)
     Tp = Float64
     x = Array{Tp}(undef,M+2*Me)
     x[1:M] = LinRange{Tp}(-1+innergap,1-innergap,M)
+    # x[1:M] = cos.(π.*x[1:M])
     x[M+1:M+Me] = LinRange{Tp}(-endpoints,-1-outergap,Me)
     x[M+1+Me:M+2*Me] = LinRange{Tp}(1+outergap,endpoints,Me)
     return x
@@ -46,32 +51,15 @@ function evaluate(x, f)
 end
 
 # Fit low order expansion to higher order expansion
-function expansion_sum_space(c, Nn, N, el_no, constant)
-    # N1 = N+2; N2 = N+1; Nn1 = Nn+2; Nn2 = Nn+1; 
-    v = zeros(1 + el_no*(2*N+2))
-    v = BlockArray(v, vcat(1,Fill(2,(length(v)-1)÷2)))
+function expansion_sum_space(c, N, el_no)
+    v = zeros(1 + el_no*(N-1))
+    if el_no == 1
+        v = BlockArray(v, vcat(1,Fill(2,(length(v)-1)÷2)))
+    else
+        v = BlockArray(v, vcat(1,Fill(el_no,(length(v)-1)÷el_no)))
+    end
     
     v[1:length(c)] = c
-    # if constant == true
-    #     v[1] = c[1]
-    #     # v[Block.(2:Nn+2)] = c[Block.(2:Nn+2)]
-    #     for e in 1:el_no
-    #         v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[Block.((e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2)]
-            
-    #     end
-    #     # for e in 1:el_no 
-    #     #     v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e:(2*e-1)*Nn+2*e]
-    #     #     v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e+1:2*e*Nn+2*e+1]
-    #     # end
-    # else
-    #     for e in 1:el_no
-    #         v[Block.((e-1)*(N+1)+2:(e-1)*(N+1)+Nn+2)] = c[Block.((e-1)*(Nn+1)+2:(e-1)*(Nn+1)+Nn+2)]
-    #     end
-    #     # for e in 1:el_no
-    #     #     v[2*(e-1)*N+2*e:2*(e-1)*N+2*e+Nn] = c[2*(e-1)*Nn+2*e-1:(2*e-1)*Nn+2*e-1]
-    #     #     v[(2*e-1)*N+2*e+1:(2*e-1)*N+2*e+1+Nn] = c[(2*e-1)*Nn+2*e:2*e*Nn+2*e]
-    #     # end
-    # end
     return v
 end
 

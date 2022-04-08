@@ -20,15 +20,20 @@ M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me, endpoints=10) # Collocation points
 
-Nn = N#min(N,7) # Truncation degree to approximate the supporter functions
+Nn = min(N,5) # Truncation degree to approximate the supporter functions
 
 A = framematrix(x, eSp, Nn, M, Me) # Blocked frame matrix
+
+x = collocation_points(M, Me, endpoints=10, innergap=1e-5)
+Ad = dualframematrix(x, eSd, Nn, M, Me)
 
 # Compute support functions
 uS = fft_supporter_functions(λ, μ, η, N, a=a) # Actual functions
 # Element primal sum space coefficients
-cuS = coefficient_supporter_functions(A, x, uS, Nn, N) 
-
+x = collocation_points(M, Me, endpoints=10) 
+cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
+x = collocation_points(M, Me, endpoints=10, innergap=1e-5)
+dcuS = coefficient_supporter_functions(Ad, x, uS, 2N+7)
 # Plot sanity check
 # xx = -5:0.01:5
 # plot(xx, uS[1][1](xx))
@@ -39,7 +44,15 @@ cuS = coefficient_supporter_functions(A, x, uS, Nn, N)
 ASp = ElementAppendedSumSpace(uS, cuS, a)
 
 # Create matrix for element 1
-Id = (eSd \ ASp)[1:2N+7+(el_no-1)*(2N+6),1:2N+7+(el_no-1)*(2N+6)]
+# Id = (eSd \ ASp)[1:2N+7+(el_no-1)*(2N+6),1:2N+7+(el_no-1)*(2N+6)]
+
+Id = (eSd \ ASp)[1:2N+7+(el_no-1)*(2N+6), Block.(1:2N+7)]
+Id[:,Block.(2:5)] .= 0
+for j = 1:4
+    for i = 1:3
+    Id[:,Block.(j+1)[i]] = dcuS[j][i]
+    end
+end
 
 x = axes(eSp, 1); H = inv.( x .- x')
 Hm = (1/π).*((eSp\(H*eSp))[1:2N+3,1:2N+3])    # Hilbert: Sp -> Sp
@@ -50,7 +63,7 @@ Bm = (eSd\eSp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
 Dm =  [λ.*Bm + μ.*Bm*Hm + Cm[j]*Hm for j in 1:el_no]     # Helmholtz-like operator: Sp -> Sd   
 Dm = [hcat(zeros(size(Dm[j],1), 4),Dm[j]) for j in 1:el_no] # Adding 4 columns to construct: ASp -> Sd
 for j in 1:el_no
-    Dm[j][2:3,1:2] = λ*I[1:2,1:2]; Dm[j][end-1:end,3:4] = λ*I[1:2,1:2]
+    Dm[j][2:3,1:2] = I[1:2,1:2]; Dm[j][end-1:end,3:4] = I[1:2,1:2]
     if j == 1
         # In first element permute T0 column to start
         Dm[j] = [Dm[j][:,5] Dm[j][:,1:4] Dm[j][:,6:end]] 
@@ -104,7 +117,7 @@ p = plot()
 xx = -5:0.001:5
 xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
 # anim = @animate  for k = 2: timesteps+1
-for k = 1: timesteps+1
+for k = 1:  timesteps+1
     t = round(Δt*(k-1), digits=2)
     yy = ASp[xx,1:length(u[k])]*u[k]
     p = plot(xx,yy, title="time=$t (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)

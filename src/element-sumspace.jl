@@ -41,6 +41,27 @@ function getindex(ES::ElementSumSpace{1, E, T}, x::Real, j::Int)::T where {E, T}
     end
 end
 
+function getindex(ES::ElementSumSpace{2, E, T}, x::Real, j::Int)::T where {E, T}
+
+    el_no = length(ES.I)-1
+    if j == 1
+        y = affinetransform(ES.I[1],ES.I[2], x)
+        return ExtendedChebyshevU{T}()[y, 1]
+    else
+        ind = (j-2) ÷ el_no + 1                # Block number - 1
+        i = isodd(ind) ? (ind ÷ 2)+1 : ind ÷ 2 # Poly/function order
+        el = (j-1) - ((j-2) ÷ el_no)*el_no     # Element number
+
+        y = affinetransform(ES.I[el],ES.I[el+1], x)
+        if isodd(ind)
+            return ExtendedWeightedChebyshevT{T}()[y, i]
+        else
+            return ExtendedChebyshevU{T}()[y, i+1]
+        end
+
+    end
+end
+
 
 # function getindex(S::SumSpace{2, E, T}, x::Real, j::Int)::T where {E, T}
 #     y = affinetransform(S.I[1],S.I[2], x)
@@ -183,7 +204,13 @@ function \(Sd::ElementSumSpace{2}, ASp::ElementAppendedSumSpace)
         # A  = append!(A, [Bm * Id])
     # end
     Bm = Id_Sp_Sd(ASp)[1:2N+7+(el_no-1)*(2N+6),1:2N+3+(el_no-1)*(2N+2)]
-    A = Bm*Id
+    
+    rows = [size(Bm,1)]; cols = vcat([1], Fill(el_no, (2*N+6)))
+    A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
+    
+    A[1:end,1:end] = Bm*Id
+
+
     return A
 end
 
