@@ -151,10 +151,10 @@ end
 function coefficient_supporter_functions(A, x, uS, N; tol=1e-6)
     (ywT0, yU_1, ywT1, yU0) = uS
     el_no = length(yU0)
-    yu_1 = [solvesvd(A, evaluate(x, yU_1[j]); tol=tol) for j in 1:el_no]
-    yu0 = [solvesvd(A, evaluate(x, yU0[j]); tol=tol) for j in 1:el_no]
-    ywt0 = [solvesvd(A, evaluate(x, ywT0[j]); tol=tol) for j in 1:el_no]
-    ywt1 = [solvesvd(A, evaluate(x, ywT1[j]); tol=tol) for j in 1:el_no]
+    yu_1 = [solvesvd(A, riemann(x, yU_1[j]); tol=tol) for j in 1:el_no]
+    yu0 = [solvesvd(A, riemann(x, yU0[j]); tol=tol) for j in 1:el_no]
+    ywt0 = [solvesvd(A, riemann(x, ywT0[j]); tol=tol) for j in 1:el_no]
+    ywt1 = [solvesvd(A, riemann(x, ywT1[j]); tol=tol) for j in 1:el_no]
     yu_1 = [expansion_sum_space(yu_1[j],  N, el_no) for j in 1:el_no]
     yu0 = [expansion_sum_space(yu0[j], N, el_no) for j in 1:el_no]
     ywt0 = [expansion_sum_space(ywt0[j], N, el_no) for j in 1:el_no]

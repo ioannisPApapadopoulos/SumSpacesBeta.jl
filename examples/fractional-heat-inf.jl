@@ -6,7 +6,7 @@ import LinearAlgebra: I
 Solve the fractional heat equation with one element at [-1,1]. 
 """
 
-N = 5 # Truncation degree
+N = 21 # Truncation degree
 λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
 Sp = SumSpaceP() # Primal sum space
