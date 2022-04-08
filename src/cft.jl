@@ -148,17 +148,17 @@ function fft_supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
     return uS
 end
 
-function coefficient_supporter_functions(A, x, uS, Nn, N; tol=1e-6, constant=true)
+function coefficient_supporter_functions(A, x, uS, N; tol=1e-6)
     (ywT0, yU_1, ywT1, yU0) = uS
     el_no = length(yU0)
     yu_1 = [solvesvd(A, evaluate(x, yU_1[j]); tol=tol) for j in 1:el_no]
     yu0 = [solvesvd(A, evaluate(x, yU0[j]); tol=tol) for j in 1:el_no]
     ywt0 = [solvesvd(A, evaluate(x, ywT0[j]); tol=tol) for j in 1:el_no]
     ywt1 = [solvesvd(A, evaluate(x, ywT1[j]); tol=tol) for j in 1:el_no]
-    yu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no, constant) for j in 1:el_no]
-    yu0 = [expansion_sum_space(yu0[j], Nn, N, el_no, constant) for j in 1:el_no]
-    ywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no, constant) for j in 1:el_no]
-    ywt1 = [expansion_sum_space(ywt1[j], Nn, N, el_no, constant) for j in 1:el_no]
+    yu_1 = [expansion_sum_space(yu_1[j],  N, el_no) for j in 1:el_no]
+    yu0 = [expansion_sum_space(yu0[j], N, el_no) for j in 1:el_no]
+    ywt0 = [expansion_sum_space(ywt0[j], N, el_no) for j in 1:el_no]
+    ywt1 = [expansion_sum_space(ywt1[j],  N, el_no) for j in 1:el_no]
     return (ywt0, yu_1, ywt1, yu0)
 end
 

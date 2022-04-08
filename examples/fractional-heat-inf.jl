@@ -22,7 +22,7 @@ A = framematrix(x, Sp, Nn, M, Me) # Blocked frame matrix
 # Compute support functions
 uS = fft_supporter_functions(λ, μ, η) # Actual functions
 # Primal sum space coefficients
-cuS = coefficient_supporter_functions(A, x, uS, Nn, N) 
+cuS = coefficient_supporter_functions(A, x, uS, N) 
 
 # Create appended sum space
 ASp = AppendedSumSpace(uS, cuS)
