@@ -19,7 +19,7 @@ include("extendedchebyshev.jl")
 include("sumspace.jl")
 include("element-sumspace.jl")
 
-export solvesvd, collocation_points, riemann, evaluate, framematrix,
+export solvesvd, collocation_points, riemann, evaluate, framematrix, dualframematrix,
             supporter_functions, interpolate_supporter_functions, coefficient_supporter_functions, inverse_fourier_transform, fractional_heat_fourier_solve, fft_supporter_functions,
             affinetransform, sqrt_laplace_wT0, sqrt_laplace_U_1,
             ExtendedChebyshev, ExtendedChebyshevT, ExtendedChebyshevU, extendedchebyshevt, ExtendedWeightedChebyshevT, ExtendedWeightedChebyshevU,

@@ -15,12 +15,13 @@ Sd = SumSpaceD() # Dual sum space
 M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me) # Collocation points
-Nn = min(N,7)
+Nn =  min(N,7)
 
 A = framematrix(x, Sp, Nn, M, Me) # Blocked frame matrix
-
+x = collocation_points(M, Me, innergap=1e-5) 
+# Ad = dualframematrix(x, Sd, Nn, M, Me)
 # Compute support functions
-uS = fft_supporter_functions(λ, μ, η) # Actual functions
+uS = fft_supporter_functions(λ, μ, η, N) # Actual functions
 # Primal sum space coefficients
 cuS = coefficient_supporter_functions(A, x, uS, Nn, N) 
 
@@ -40,10 +41,11 @@ Bm = (Sd\Sp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
 
 Id = (Sd \ ASp)[1:2N+7,1:2N+7]  # Identity: ASp -> Sd
 
+Id[:,2:5] = Id[:,2:5] #/ λ
 
 Dm =  λ.*Bm + μ.*Bm*Hm + Cm*Hm     # Helmholtz-like operator: Sp -> Sd   
 Dm = hcat(zeros(size(Dm,1), 4),Dm) # Adding 4 columns to construct: ASp -> Sd
-Dm[2:5,1:4] = I[1:4,1:4]
+Dm[2:3,1:2] = I[1:2,1:2]; Dm[end-1:end,3:4] = I[1:2,1:2]
 Dm = [Dm[:,5] Dm[:,1:4] Dm[:,6:end]] # permute T0 column to start
 
 # Initial condition, u₀ = √(1-x²)

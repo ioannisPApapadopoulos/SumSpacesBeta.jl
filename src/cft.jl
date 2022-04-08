@@ -8,7 +8,7 @@ function inverse_fourier_transform(F, t; t0=-1000, dt=0.001)
 end
 
 
-function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
+function supporter_functions(λ, μ, η, N; t0=-1000., dt=0.001, a=[-1.,1.])
     t=range(t0,-t0,step=dt)
 
     # FIXME: Should probably find a nicer way around this
@@ -17,19 +17,20 @@ function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
         @warn "μ ≈ 0, λ < 0, and λ ∈ Sample, we slightly perturb λ to avoid NaNs in the FFT computation in supporter_functions in cft.jl"
     end
 
-    fmultiplier = k -> (λ .- im.*μ.*sign.(k) .+im.*η.*k .+ abs.(k))
+    fm = k -> (λ .- im.*μ.*sign.(k) .+im.*η.*k .+ abs.(k))
+    hfm = k -> (- λ.*im.*sign.(k) .- μ .+ η.*abs.(k) .- im.*k)
     
-    # For certain values of λ, μ and η, fmultiplier can be equal to 0. This causes
-    # NaNs in the ifft routine. To avoid this we watch if fmultiplier=0 and if it does
+    # For certain values of λ, μ and η, fm can be equal to 0. This causes
+    # NaNs in the ifft routine. To avoid this we watch if fm=0 and if it does
     # then we average the Fourier transform around 0 to get an approximate of the limit.
     # FIXME: These list comprehensions are slow, can we speed it up? 
 
     ## Define function F[wT0] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
     # λ = μ = 0, η = -1 FwT0(0) → ∞; λ = μ = 0, η = 1 FwT0(0) → ∞ ± i∞
     # NaNs if λ = 0, but rest can be set to 0.
-    tFwT0 = k -> pi * besselj.(0, abs.(k)) ./ fmultiplier(k)
+    tFwT0 = k -> pi * besselj.(0, abs.(k)) ./ fm(k)
     if λ ≈ 0
-        FwT0 = k -> [fmultiplier(m) ≈ 0 ? (tFwT0(-eps())+tFwT0(eps()))/2 : tFwT0(m)  for m in k]
+        FwT0 = k -> [fm(m) ≈ 0 ? (tFwT0(m-eps())+tFwT0(m+eps()))/2 : tFwT0(m)  for m in k]
     else
         FwT0 = k -> tFwT0(k)
     end
@@ -38,9 +39,9 @@ function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
     # λ = μ = 0, η = -1 FwT1(0) → c; λ = μ = 0, η = 1 FwT1(0) → c ± ic, where c finite
     # λ = μ = η = 0, FwT1(0) = ± c
     # NaNs if λ = 0, but rest can be set to 0.
-    tFwT1 = k -> -im * pi * besselj.(1, k) ./ fmultiplier(k)
+    tFwT1 = k -> (-im).^(N+2) * pi * besselj.(N+2, k) ./ fm(k)
     if λ ≈ 0
-        FwT1 = k -> [fmultiplier(m) ≈ 0 ? (tFwT1(-eps())+tFwT1(eps()))/2 : tFwT1(m)  for m in k]
+        FwT1 = k -> [fm(m) ≈ 0 ? (tFwT1(m-eps())+tFwT1(m+eps()))/2 : tFwT1(m)  for m in k]
     else
         FwT1 = k -> tFwT1(k)
     end
@@ -49,17 +50,14 @@ function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
     # λ = μ = η = 0, FU0(0) = c
     # NaNs if λ = 0, but rest can be set to 0.
     
-    tFU0 = k -> (pi * besselj.(1, abs.(k)) + 2 .*sin.(k)./k - 2 .* sin.(abs.(k)) ./ abs.(k)) ./ fmultiplier(k)
-    # if λ ≈ 0
-    #     FU0 = k -> [fmultiplier(m) ≈ 0 ? (tFU0(-eps())+tFU0(eps()))/2 : tFU0(m)  for m in k]
-    # else
-    #     FU0 = k -> tFU0(k)
-    # end
-    FU0 = k -> [m ≈ 0 ? (tFU0(-eps())+tFU0(eps()))/2 : tFU0(m)  for m in k]
+    tFU0 =  k -> ( (-im).^(N+2)*pi.*besselj.(N+2, k) ) ./ hfm(k)
+    FU0 = k -> [hfm(m) ≈ 0 ? (tFU0(m-eps())+tFU0(m+eps()))/2 : tFU0(m)  for m in k]
+
+    # FU0 = k -> [m ≈ 0 ? (tFU0(-eps())+tFU0(eps()))/2 : tFU0(m)  for m in k]
     
     ## Define function F[U-1] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
-    tFU_1 = k -> ( im*pi*k.*besselj.(0,abs.(k)) ./ abs.(k)) ./ fmultiplier(k)
-    # FU_1 = k -> [m ≈ 0 ? ComplexF64(0.) : ComplexF64(im*pi*m.*besselj.(0,abs.(m)) ./ abs.(m)) ./ fmultiplier(m) for m in k]
+    tFU_1 = k -> ( im*pi*k.*besselj.(0,abs.(k)) ./ abs.(k)) ./ fm(k)
+    # FU_1 = k -> [m ≈ 0 ? ComplexF64(0.) : ComplexF64(im*pi*m.*besselj.(0,abs.(m)) ./ abs.(m)) ./ fm(m) for m in k]
     FU_1 = k -> [m ≈ 0 ? (tFU_1(-eps())+tFU_1(eps()))/2 : tFU_1(m)  for m in k]
     
     # Old code to find support solutions via a Hilbert transform first. 
@@ -92,10 +90,10 @@ function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
         sFwT1 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FwT1((1/ci) .*k)
         sFU0 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FU0((1/ci) .*k)
         sFU_1 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FU_1((1/ci) .*k)
-        append!(ywT0, [cifft(sFwT0, t, dt, t0, w)[2:end]])
-        append!(ywT1, [cifft(sFwT1, t, dt, t0, w)[2:end]])
-        append!(yU0, [cifft(sFU0, t, dt, t0, w)[2:end]])
-        append!(yU_1, [cifft(sFU_1, t, dt, t0, w)[2:end]])
+        append!(ywT0, [cifft(sFwT0, t, dt, t0, w)[2:end]./λ])
+        append!(ywT1, [cifft(sFwT1, t, dt, t0, w)[2:end]./λ])
+        append!(yU0, [cifft(sFU0, t, dt, t0, w)[2:end]./λ])
+        append!(yU_1, [cifft(sFU_1, t, dt, t0, w)[2:end]./λ])
     end
     
     # w = ifftshift((fftfreq(length(t), 1/dt)) * 2 * pi) 
@@ -130,7 +128,7 @@ function interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
     return (ywT0, yU_1, ywT1, yU0)
 end
 
-function fft_supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
+function fft_supporter_functions(λ, μ, η, N; t0=-1000., dt=0.001, a=[-1.,1.])
     # Special case analytical expressions
     if λ == μ == η ≈ 0
         ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
@@ -143,7 +141,7 @@ function fft_supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
         end
     end 
     
-    (w, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, t0=t0, dt=dt, a=a)
+    (w, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, N, t0=t0, dt=dt, a=a)
     uS = interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
     return uS
 end
@@ -151,10 +149,10 @@ end
 function coefficient_supporter_functions(A, x, uS, Nn, N; tol=1e-6, constant=true)
     (ywT0, yU_1, ywT1, yU0) = uS
     el_no = length(yU0)
-    yu_1 = [solvesvd(A, evaluate(x, yU_1[j]); tol=tol) for j in 1:el_no]
-    yu0 = [solvesvd(A, evaluate(x, yU0[j]); tol=tol) for j in 1:el_no]
-    ywt0 = [solvesvd(A, evaluate(x, ywT0[j]); tol=tol) for j in 1:el_no]
-    ywt1 = [solvesvd(A, evaluate(x, ywT1[j]); tol=tol) for j in 1:el_no]
+    yu_1 = [solvesvd(A, riemann(x, yU_1[j]); tol=tol) for j in 1:el_no]
+    yu0 = [solvesvd(A, riemann(x, yU0[j]); tol=tol) for j in 1:el_no]
+    ywt0 = [solvesvd(A, riemann(x, ywT0[j]); tol=tol) for j in 1:el_no]
+    ywt1 = [solvesvd(A, riemann(x, ywT1[j]); tol=tol) for j in 1:el_no]
     yu_1 = [expansion_sum_space(yu_1[j], Nn, N, el_no, constant) for j in 1:el_no]
     yu0 = [expansion_sum_space(yu0[j], Nn, N, el_no, constant) for j in 1:el_no]
     ywt0 = [expansion_sum_space(ywt0[j], Nn, N, el_no, constant) for j in 1:el_no]

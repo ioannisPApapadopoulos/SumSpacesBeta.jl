@@ -7,7 +7,7 @@ Solve the fractional heat equation with 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,
 """
 
 
-N = 5 # Truncation degree
+N = 11 # Truncation degree
 λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
 a = [-3,-1,1.,3] # 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3]
@@ -20,12 +20,12 @@ M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me, endpoints=10) # Collocation points
 
-Nn = min(N,11) # Truncation degree to approximate the supporter functions
+Nn = N#min(N,7) # Truncation degree to approximate the supporter functions
 
 A = framematrix(x, eSp, Nn, M, Me) # Blocked frame matrix
 
 # Compute support functions
-uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
+uS = fft_supporter_functions(λ, μ, η, N, a=a) # Actual functions
 # Element primal sum space coefficients
 cuS = coefficient_supporter_functions(A, x, uS, Nn, N) 
 
@@ -41,7 +41,7 @@ ASp = ElementAppendedSumSpace(uS, cuS, a)
 # Create matrix for element 1
 Id = (eSd \ ASp)[1:2N+7+(el_no-1)*(2N+6),1:2N+7+(el_no-1)*(2N+6)]
 
-x = axes(Sp, 1); H = inv.( x .- x')
+x = axes(eSp, 1); H = inv.( x .- x')
 Hm = (1/π).*((eSp\(H*eSp))[1:2N+3,1:2N+3])    # Hilbert: Sp -> Sp
 Cm = [(eSd\(Derivative(x)*eSp)[j])[1:2N+7,1:2N+3] for j in 1:el_no]# Derivative: Sp -> Sd
 Bm = (eSd\eSp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
@@ -50,7 +50,7 @@ Bm = (eSd\eSp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
 Dm =  [λ.*Bm + μ.*Bm*Hm + Cm[j]*Hm for j in 1:el_no]     # Helmholtz-like operator: Sp -> Sd   
 Dm = [hcat(zeros(size(Dm[j],1), 4),Dm[j]) for j in 1:el_no] # Adding 4 columns to construct: ASp -> Sd
 for j in 1:el_no
-    Dm[j][2:5,1:4] = I[1:4,1:4]
+    Dm[j][2:3,1:2] = λ*I[1:2,1:2]; Dm[j][end-1:end,3:4] = λ*I[1:2,1:2]
     if j == 1
         # In first element permute T0 column to start
         Dm[j] = [Dm[j][:,5] Dm[j][:,1:4] Dm[j][:,6:end]] 
