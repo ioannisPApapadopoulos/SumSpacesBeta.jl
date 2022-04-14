@@ -34,12 +34,12 @@ SumSpace{kind}() where kind = SumSpace{kind}([-1.,1.])
 # SumSpaceP{T}() where T = SumSpaceP{SVector([-1.,1.]), T}()
 # SumSpace() = SumSpace{Float64}()
 
-function SumSpaceP()
-    SumSpace{1}()
+function SumSpaceP(a=[-1,1.])
+    SumSpace{1}(a)
 end
 
-function SumSpaceD()
-    SumSpace{2}()
+function SumSpaceD(a=[-1.,1.])
+    SumSpace{2}(a)
 end
 
 
@@ -82,7 +82,8 @@ struct AppendedSumSpace{AA, CC,E, T} <: Basis{T}
 end
 AppendedSumSpace{E,T}(A, C, I::Vector{Float64}) where {E,T} = AppendedSumSpace{Any,Any,E,T}(A, C, I::Vector{Float64})
 AppendedSumSpace{E}(A, C, I::Vector{Float64}) where E = AppendedSumSpace{E,Float64}(A, C, I::Vector{Float64})
-AppendedSumSpace(A, C) = AppendedSumSpace{Vector{Float64}}(A, C, [-1.,1.])
+AppendedSumSpace(A, C, I::Vector{Float64}) where E = AppendedSumSpace{Vector{Float64}}(A, C, I::Vector{Float64})
+AppendedSumSpace(A, C) = AppendedSumSpace(A, C, [-1.,1.])
 
 
 axes(ASp::AppendedSumSpace) = (Inclusion(ℝ), OneToInf())
@@ -147,7 +148,7 @@ function \(Sd::SumSpace{2}, ASp::AppendedSumSpace)
 
 
     # FIXME: Temporary hack in finite-dimensional indexing
-    N = Int64(1e2)
+    N = Int64(5e2)
     Bm = (Sd \ SumSpace{1,Vector{T},T}(ASp.I))[1:2N+7,1:2N+3]    
     B = BlockBroadcastArray(hcat, ASp.C[1][1],ASp.C[2][1],ASp.C[3][1],ASp.C[4][1])[1:end,1:end]
     zs = Zeros(∞,4)
