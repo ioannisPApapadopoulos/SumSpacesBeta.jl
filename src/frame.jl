@@ -9,15 +9,15 @@ function solvesvd(A, b; tol=1e-7, block=true)
     c = V * Diagonal(S⁺) * U' * b
 
     # Rearrange into block structure
-    if block == true
-        # FIXME: Get correct block structure in output vector
-        el_no = length(A[1, Block.(2)])
-        if el_no == 1
-            c = BlockArray(c, vcat(1,Fill(2,(length(c)-1)÷2)))
-        else
-            c = BlockArray(c, vcat(1,Fill(el_no,(length(c)-1)÷el_no)))
-        end
-    end
+    # if block == true
+    #     # FIXME: Get correct block structure in output vector
+    #     el_no = length(A[1, Block.(2)])
+    #     if el_no == 1
+    #         c = BlockArray(c, vcat(1,Fill(2,(length(c)-1)÷2)))
+    #     else
+    #         c = BlockArray(c, vcat(1,Fill(el_no,(length(c)-1)÷el_no)))
+    #     end
+    # end
     return c
 end
 
@@ -54,11 +54,11 @@ end
 # Fit low order expansion to higher order expansion
 function expansion_sum_space(c, N, el_no)
     v = zeros(1 + el_no*(N-1))
-    if el_no == 1
-        v = BlockArray(v, vcat(1,Fill(2,(length(v)-1)÷2)))
-    else
-        v = BlockArray(v, vcat(1,Fill(el_no,(length(v)-1)÷el_no)))
-    end
+    # if el_no == 1
+    #     v = BlockArray(v, vcat(1,Fill(2,(length(v)-1)÷2)))
+    # else
+    #     v = BlockArray(v, vcat(1,Fill(el_no,(length(v)-1)÷el_no)))
+    # end
     
     v[1:length(c)] = c
     return v
@@ -70,6 +70,7 @@ function framematrix(x, Sp, Nn, M, Me)
     el = length(Sp.I) - 1
     if typeof(Sp) == SumSpace{1, Vector{Tp}, Tp}
         rows = [M+2*Me]; cols = vcat([1], Fill(2, el*(Nn+1)))
+        # rows = [M+2*Me]; cols = Fill(2, el*(Nn+1))
     elseif typeof(Sp) == ElementSumSpace{1, Vector{Tp}, Tp}
         rows = [M+2*Me]; cols = vcat([1], Fill(el, (2*Nn+2)))
     else

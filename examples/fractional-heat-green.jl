@@ -1,5 +1,5 @@
 using Revise
-using SumSpaces, Plots
+using ClassicalOrthogonalPolynomials, SumSpaces, Plots
 import LinearAlgebra: I
 
 """
@@ -15,15 +15,15 @@ Sd = SumSpaceD(a) # Dual sum space
 
 M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
-x = collocation_points(M, Me, endpoints=20) # Collocation points
-Nn = min(N,7)
+x = collocation_points(M, Me, endpoints=100) # Collocation points
+Nn = min(N,21)
 
 A = framematrix(x, Sp, Nn, M, Me) # Blocked frame matrix
 
 # Compute support functions
-uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
+# uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
 # Primal sum space coefficients
-cuS = coefficient_supporter_functions(A, x, uS, N) 
+cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
 
 # Create appended sum space
 ASp = AppendedSumSpace(uS, cuS, a)
@@ -40,7 +40,7 @@ Cm = (Sd\(Derivative(x)*Sp))[1:2N+7,1:2N+3] # Derivative: Sp -> Sd
 Bm = (Sd\Sp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
 
 Id = (Sd \ ASp)[1:2N+7,1:2N+7]  # Identity: ASp -> Sd
-
+# Id[:,2:5] .= 0
 
 Dm =  λ.*Bm + μ.*Bm*Hm + Cm*Hm     # Helmholtz-like operator: Sp -> Sd   
 Dm = hcat(zeros(size(Dm,1), 4),Dm) # Adding 4 columns to construct: ASp -> Sd
@@ -62,12 +62,18 @@ T = chebyshevt(-50..50)
 u1 = (T \ u0.(axes(T,1)))[1:N+2]
 u11 = zeros(2N+7); u11[1] = u1[1]; u11[7:2:end] = u1[2:end]
 u = [u11]
+
 # Run solve loop for time-stepping
 timesteps=50
 for k = 1:timesteps
 
+    g = x -> ASp[x,1:length(u[k])]*u[k]
+    h = x->g([x])
+    ut = (T \ h.(axes(T,1)))[1:N+2]
+    ut1 = zeros(2N+7); ut1[1] = ut[1]; ut1[7:2:end] = ut[2:end]
+    v = Id*ut1
     # Map from Sp to Sd
-    v = Id * u[k]
+    # v = Id * u[k]
     # Multiply RHS with λ
     v = λ.*v
 
@@ -76,13 +82,13 @@ for k = 1:timesteps
     append!(u,  [u1])
 
     # Normalise constant so that it decays to zero
-    u[k+1][1] = u[k+1][1] - ASp[1e2,1:length(u[k+1])]'*u[k+1]
+    u[k+1][1] = u[k+1][1] - ASp[50.,1:length(u[k+1])]'*u[k+1]
 end
 
 
 # Plot solution
 p = plot() 
-xx = -15:0.01:15
+xx = -60:0.01:60
 xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
 # anim = @animate  for k = 2: timesteps+1
 for k = 1:  timesteps+1
@@ -92,7 +98,7 @@ for k = 1:  timesteps+1
     yy = ASp[xx,1:length(u[k])]*u[k]
     p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 1 element", legend=:topleft, xlim=xlim, ylim=ylim)
     p = plot!(xx, y(xx), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
-    sleep(0.1)
+    sleep(0.01)
     display(p)
 end  
 # gif(anim, "anim_fps10.gif", fps = 10)
