@@ -15,14 +15,14 @@ Sd = SumSpaceD() # Dual sum space
 M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me) # Collocation points
-Nn = min(N,7)
+Nn = min(N,21)
 
 A = framematrix(x, Sp, Nn, M, Me) # Blocked frame matrix
 
 # Compute support functions
 uS = fft_supporter_functions(λ, μ, η) # Actual functions
 # Primal sum space coefficients
-cuS = coefficient_supporter_functions(A, x, uS, N) 
+cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
 
 # Create appended sum space
 ASp = AppendedSumSpace(uS, cuS)
@@ -72,7 +72,7 @@ end
 # Plot solution
 p = plot()
 # anim = @animate  for k = 2: timesteps+1
-for k = 1: timesteps+1
+for k = 1: 3#timesteps+1
     t = round(Δt*(k-1), digits=2)
     xx = -5:0.001:5
     yy = ASp[xx,1:length(u[k])]*u[k]
