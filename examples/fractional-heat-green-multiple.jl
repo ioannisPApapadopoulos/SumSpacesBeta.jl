@@ -7,7 +7,7 @@ Solve the fractional heat equation with 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,
 """
 
 
-N = 5 # Truncation degree
+N = 11 # Truncation degree
 λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
 a = [-3,-1,1.,3] # 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3]
@@ -20,7 +20,7 @@ M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me, endpoints=10) # Collocation points
 
-Nn = min(N,11) # Truncation degree to approximate the supporter functions
+Nn = min(N,7) # Truncation degree to approximate the supporter functions
 
 A = framematrix(x, eSp, Nn, M, Me) # Blocked frame matrix
 
@@ -66,17 +66,17 @@ end
 # u₀[6*el_no-3] = 1.
 # u = [u₀]
 
-u0 = x -> 1. ./ (x.^2 .+ 1) 
+u0 = x -> 1. ./ ((x.^2 .+ 1) )
 # u₀ = zeros(2*N+7)
 # u₀[6] = 1.
-x = collocation_points(M, Me, endpoints=5)
+x = collocation_points(M, Me, endpoints=20)
 A = framematrix(x, eSp, N, M, Me)
 u₀ = solvesvd(A, riemann(x, u0))
 u₀₀= zeros(1+el_no*(2N+6)); u₀₀[1]=u₀[1]; u₀₀[2+4*el_no:end]=u₀[2:end]
 u = [u₀₀]
 
 # Run solve loop for time-stepping
-timesteps=50
+timesteps=100
 for k = 1:timesteps
     u1 = []
     
@@ -110,17 +110,19 @@ end
 
 # Plot solution
 p = plot() 
-xx = -5:0.01:5
-xlim = [xx[1],xx[end]]; ylim = [-0.1,1]
+xx = -20:0.01:20
+xlim = [xx[1],xx[end]]; ylim = [-0.02,1]
+y = (x,t) -> (1 + t) ./ ((x.^2 .+ (1+t).^2))
 # anim = @animate  for k = 2: timesteps+1
-for k = 1:  timesteps+1
+for k = timesteps+1
     t = Δt*(k-1)
-    y = x -> (1 + t) ./ (x.^2 .+ (1+t).^2)
+    
     tdisplay = round(t, digits=2)
     yy = ASp[xx,1:length(u[k])]*u[k]
+    
     p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
-    p = plot!(xx, y(xx), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
-    sleep(0.1)
+    p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
+    sleep(0.001)
     display(p)
 end  
 # gif(anim, "anim_fps10.gif", fps = 10)
