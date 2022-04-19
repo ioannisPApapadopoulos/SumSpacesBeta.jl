@@ -22,15 +22,19 @@ function solvesvd(A, b; tol=1e-7, block=true)
 end
 
 # Construct collocation points
-function collocation_points(M, Me; endpoints=5, innergap = 0, outergap=1e-5)
+function collocation_points(M, Me; a=[-1.,1.], endpoints=[-5.,5.], innergap = 0, outergap=1e-4)
     Tp = Float64
-    x = Array{Tp}(undef,M+2*Me)
-    x[1:M] = LinRange{Tp}(-1+innergap,1-innergap,M)
+    el_no = length(a)-1
+
+    x = Array{Tp}(undef,el_no*M+2*Me)
+    for el = 1:el_no
+        x[(el-1)*M+1:el*M] = LinRange{Tp}(a[el]+innergap,a[el+1]-innergap,M)
+    end
     # x[1:M] = LinRange{Tp}(0+innergap,1-innergap,M)
     # x[1:M] = cos.(π.*x[1:M])
-    x[M+1:M+Me] = LinRange{Tp}(-endpoints,-1-outergap,Me)
-    x[M+1+Me:M+2*Me] = LinRange{Tp}(1+outergap,endpoints,Me)
-    return x
+    x[el_no*M+1:el_no*M+Me] = LinRange{Tp}(endpoints[1],a[1]-outergap,Me)
+    x[el_no*M+1+Me:el_no*M+2*Me] = LinRange{Tp}(a[end]+outergap,endpoints[2],Me)
+    return unique(x)
 end
 
 # Convert function evaluation to Riemann sum
@@ -65,14 +69,14 @@ function expansion_sum_space(c, N, el_no)
 end
 
 # Construct Least Squares matrix for sum space
-function framematrix(x, Sp, Nn, M, Me)
+function framematrix(x, Sp, Nn; norm="riemann")
     Tp = eltype(Sp)
     el = length(Sp.I) - 1
     if typeof(Sp) == SumSpace{1, Vector{Tp}, Tp}
-        rows = [M+2*Me]; cols = vcat([1], Fill(2, el*(Nn+1)))
-        # rows = [M+2*Me]; cols = Fill(2, el*(Nn+1))
+        rows = [length(x)]; cols = vcat([1], Fill(2, el*(Nn+1)))
+        # rows = [length(x)]; cols = Fill(2, el*(Nn+1))
     elseif typeof(Sp) == ElementSumSpace{1, Vector{Tp}, Tp}
-        rows = [M+2*Me]; cols = vcat([1], Fill(el, (2*Nn+2)))
+        rows = [length(x)]; cols = vcat([1], Fill(el, (2*Nn+2)))
     else
         error("Use either SumSpace{1} or ElementSumSpace{1}")
     end
@@ -81,18 +85,24 @@ function framematrix(x, Sp, Nn, M, Me)
     A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
     
     # Form columns of Least Squares matrix.
-    A[:,Block.(1:length(cols))] = riemann(x, x->Sp[x, Block.(1:length(cols))])
+    if norm == "riemann"
+        A[:,Block.(1:length(cols))] = riemann(x, x->Sp[x, Block.(1:length(cols))])
+    elseif norm == "evaluate"
+        A[:,Block.(1:length(cols))] = evaluate(x, x->Sp[x, Block.(1:length(cols))])
+    else
+        error("Please use either riemann or evaluate as norm optionns.")
+    end
     return A
 end
 
 # Construct Least Squares matrix for dual sum space
-function dualframematrix(x, Sd, Nn, M, Me)
+function dualframematrix(x, Sd, Nn)
     Tp = eltype(Sd)
     el = length(Sd.I) - 1
     if typeof(Sd) == SumSpace{2, Vector{Tp}, Tp}
-        rows = [M+2*Me]; cols = vcat([1], Fill(2, el*(Nn+3)))
+        rows = [length(x)]; cols = vcat([1], Fill(2, el*(Nn+3)))
     elseif typeof(Sd) == ElementSumSpace{2, Vector{Tp}, Tp}
-        rows = [M+2*Me]; cols = vcat([1], Fill(el, (2*Nn+6)))
+        rows = [length(x)]; cols = vcat([1], Fill(el, (2*Nn+6)))
     else
         error("Use either SumSpace{2} or ElementSumSpace{2}")
     end
