@@ -8,7 +8,7 @@ Solve the fractional heat equation with 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,
 """
 
 
-N = 11 # Truncation degree
+N = 5 # Truncation degree
 λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
 a = [-5,-3,-1,1.,3,5] # 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3]
@@ -127,7 +127,31 @@ d = (x,t,u) -> (y(x,t) .- ASp[x,1:length(u)]'*u).^2
 errors = []
 
 # anim = @animate  for k = 2: timesteps+1
-for k = 1:timesteps+1
+# for k = 1:timesteps+1
+#     t = Δt*(k-1)
+    
+#     tdisplay = round(t, digits=2)
+#     yy = ASp[xx,1:length(u[k])]*u[k]
+    
+#     dx = x->d(x,t,u[k])
+#     # append!(errors, sqrt(quadgk(dx, -5, 5)[1]))
+
+#     p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
+#     p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
+#     # sleep(0.001)
+#     display(p)
+# end  
+
+ 
+xx = -10:0.01:10
+xlim = [xx[1],xx[end]]; ylim = [-0.02,1]
+y = (x,t) -> (1 + t) ./ ((x.^2 .+ (1+t).^2))
+d = (x,t,u) -> (y(x,t) .- ASp[x,1:length(u)]'*u).^2
+errors = []
+
+# anim = @animate  for k = 2: timesteps+1
+p = plot()
+for k = [1,51,101]
     t = Δt*(k-1)
     
     tdisplay = round(t, digits=2)
@@ -135,10 +159,19 @@ for k = 1:timesteps+1
     
     dx = x->d(x,t,u[k])
     # append!(errors, sqrt(quadgk(dx, -5, 5)[1]))
-
-    p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
-    p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
+    if t ≈ 0 || t ≈ 0.5 || t ≈ 1
+        p = plot!(xx,yy, title=L"$\mathrm{5\ elements}$", label=L"$\mathrm{time}=$"*"$tdisplay"*L"$\ \mathrm{(s)}$", legendfontsize = 10, legend=:topleft, xlim=xlim, ylim=ylim)
+    end
+    # p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
     # sleep(0.001)
     display(p)
 end  
+savefig(p, "ic1.pdf")
+
 # gif(anim, "anim_fps10.gif", fps = 10)
+
+using LaTeXStrings
+p = Plots.plot(spy(Dm[1], markersize=4,color=:darktest), title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_1} \; (N=11)$")
+Plots.savefig(p, "spy-1.pdf")
+p = Plots.plot(spy(Dm[2], markersize=4,color=:darktest), title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_k}, k \geq 2 \; (N=11)$")
+Plots.savefig(p, "spy-2.pdf")
