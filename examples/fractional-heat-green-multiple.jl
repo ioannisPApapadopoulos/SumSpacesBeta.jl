@@ -150,6 +150,7 @@ d = (x,t,u) -> (y(x,t) .- ASp[x,1:length(u)]'*u).^2
 errors = []
 
 # anim = @animate  for k = 2: timesteps+1
+using LaTeXStrings
 p = plot()
 for k = [1,51,101]
     t = Δt*(k-1)
@@ -160,7 +161,11 @@ for k = [1,51,101]
     dx = x->d(x,t,u[k])
     # append!(errors, sqrt(quadgk(dx, -5, 5)[1]))
     if t ≈ 0 || t ≈ 0.5 || t ≈ 1
-        p = plot!(xx,yy, title=L"$\mathrm{5\ elements}$", label=L"$\mathrm{time}=$"*"$tdisplay"*L"$\ \mathrm{(s)}$", legendfontsize = 10, legend=:topleft, xlim=xlim, ylim=ylim)
+        p = plot!(xx,yy, title=L"$\mathrm{5\ elements}$", 
+                label=L"$\mathrm{time}=$"*"$tdisplay"*L"$\ \mathrm{(s)}$", 
+                legendfontsize = 10, legend=:topleft, xlim=xlim, ylim=ylim,
+                xlabel=L"$x$",
+                ylabel=L"$\mathbf{S}^{\mathbf{I},+}_5(x) \mathbf{u}$")
     end
     # p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
     # sleep(0.001)
@@ -170,8 +175,8 @@ savefig(p, "ic1.pdf")
 
 # gif(anim, "anim_fps10.gif", fps = 10)
 
-using LaTeXStrings
-p = Plots.plot(spy(Dm[1], markersize=4,color=:darktest), title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_1} \; (N=11)$")
-Plots.savefig(p, "spy-1.pdf")
-p = Plots.plot(spy(Dm[2], markersize=4,color=:darktest), title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_k}, k \geq 2 \; (N=11)$")
-Plots.savefig(p, "spy-2.pdf")
+
+# p = Plots.plot(spy(Dm[1], markersize=4,color=:darktest), title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_1} \; (N=11)$")
+# Plots.savefig(p, "spy-1.pdf")
+# p = Plots.plot(spy(Dm[2], markersize=4,color=:darktest), title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_k}, k \geq 2 \; (N=11)$")
+# Plots.savefig(p, "spy-2.pdf")
