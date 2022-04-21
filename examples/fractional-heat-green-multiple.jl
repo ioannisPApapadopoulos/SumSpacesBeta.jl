@@ -1,14 +1,15 @@
 using Revise
 using SumSpaces, Plots
 using QuadGK
-import LinearAlgebra: I
+import LinearAlgebra: I, norm
+using LaTeXStrings
 
 """
 Solve the fractional heat equation with 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3].
 """
 
 
-N = 5 # Truncation degree
+N = 11 # Truncation degree
 λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
 a = [-5,-3,-1,1.,3,5] # 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3]
@@ -63,19 +64,19 @@ for j in 1:el_no
 end
 
 # Initial condition, u₀ = √(1-x²)
-# u₀ = zeros(1+el_no*(2N+6))
-# u₀ = BlockArray(u₀, vcat(1,Fill(el_no,(length(u₀)-1)÷el_no)))
-# u₀[Block.(6)][3] = 1.
-# u = [u₀]
+u₀ = zeros(1+el_no*(2N+6))
+u₀ = BlockArray(u₀, vcat(1,Fill(el_no,(length(u₀)-1)÷el_no)))
+u₀[Block.(6)][3] = 1.
+u = [u₀]
 
-u0 = x -> 1. ./ ((x.^2 .+ 1) )
-u₀ = zeros(2*N+7)
-u₀[6] = 1.
-x = collocation_points(M, Me, a=a, endpoints=[-20.,20])
-A = framematrix(x, eSp, N, norm="riemann")
-u₀ = solvesvd(A, riemann(x, u0))#, tol=1e-3)
-u₀₀= zeros(1+el_no*(2N+6)); u₀₀[1]=u₀[1]; u₀₀[2+4*el_no:4*el_no+length(u₀)]=u₀[2:end]
-u = [u₀₀]
+# u0 = x -> 1. ./ ((x.^2 .+ 1) )
+# u₀ = zeros(2*N+7)
+# u₀[6] = 1.
+# x = collocation_points(M, Me, a=a, endpoints=[-20.,20])
+# A = framematrix(x, eSp, N, norm="riemann")
+# u₀ = solvesvd(A, riemann(x, u0))#, tol=1e-3)
+# u₀₀= zeros(1+el_no*(2N+6)); u₀₀[1]=u₀[1]; u₀₀[2+4*el_no:4*el_no+length(u₀)]=u₀[2:end]
+# u = [u₀₀]
 
 # Run solve loop for time-stepping
 timesteps=100
@@ -123,36 +124,11 @@ p = plot()
 xx = -20:0.01:20
 xlim = [xx[1],xx[end]]; ylim = [-0.02,1]
 y = (x,t) -> (1 + t) ./ ((x.^2 .+ (1+t).^2))
-d = (x,t,u) -> (y(x,t) .- ASp[x,1:length(u)]'*u).^2
+d = (x,t,u) -> abs.(y(x,t) .- ASp[x,1:length(u)]*u)
 errors = []
 
 # anim = @animate  for k = 2: timesteps+1
-# for k = 1:timesteps+1
-#     t = Δt*(k-1)
-    
-#     tdisplay = round(t, digits=2)
-#     yy = ASp[xx,1:length(u[k])]*u[k]
-    
-#     dx = x->d(x,t,u[k])
-#     # append!(errors, sqrt(quadgk(dx, -5, 5)[1]))
-
-#     p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
-#     p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
-#     # sleep(0.001)
-#     display(p)
-# end  
-
- 
-xx = -10:0.01:10
-xlim = [xx[1],xx[end]]; ylim = [-0.02,1]
-y = (x,t) -> (1 + t) ./ ((x.^2 .+ (1+t).^2))
-d = (x,t,u) -> (y(x,t) .- ASp[x,1:length(u)]'*u).^2
-errors = []
-
-# anim = @animate  for k = 2: timesteps+1
-using LaTeXStrings
-p = plot()
-for k = [1,51,101]
+for k = 1:timesteps+1
     t = Δt*(k-1)
     
     tdisplay = round(t, digits=2)
@@ -160,23 +136,52 @@ for k = [1,51,101]
     
     dx = x->d(x,t,u[k])
     # append!(errors, sqrt(quadgk(dx, -5, 5)[1]))
-    if t ≈ 0 || t ≈ 0.5 || t ≈ 1
-        p = plot!(xx,yy, title=L"$\mathrm{5\ elements}$", 
-                label=L"$\mathrm{time}=$"*"$tdisplay"*L"$\ \mathrm{(s)}$", 
-                legendfontsize = 10, legend=:topleft, xlim=xlim, ylim=ylim,
-                xlabel=L"$x$",
-                ylabel=L"$\mathbf{S}^{\mathbf{I},+}_5(x) \mathbf{u}$")
-    end
-    # p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
+    append!(errors, norm(dx(xx), Inf))
+
+    p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
+    p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
     # sleep(0.001)
     display(p)
-end  
-savefig(p, "ic1.pdf")
-
+end
 # gif(anim, "anim_fps10.gif", fps = 10)
 
+# plot(1:length(errors), errors, legend=:none, 
+#     title=L"\mathrm{Error \ norm}",
+#     markers=:circle,
+#     xlabel=L"$k$",
+#     xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
+#     ylabel=L"$\Vert u(x,k\Delta t)-\mathbf{S}^{\mathbf{I},\!\!\!\!+}_5\!\!\!\!\!(x) \mathbf{u}_k)\Vert_\infty$")
+# savefig("errors-infty.pdf")
+ 
+# xx = -10:0.01:10
+# xlim = [xx[1],xx[end]]; ylim = [-0.02,1]
+# p = plot()
+# for k = [1,51,101]
+#     t = Δt*(k-1)
+    
+#     tdisplay = round(t, digits=2)
+#     yy = ASp[xx,1:length(u[k])]*u[k]
+    
+#     if t ≈ 0 || t ≈ 0.5 || t ≈ 1
+#         p = plot!(xx,yy, title=L"$\mathrm{5\ elements}$", 
+#                 label=L"$\mathrm{time}=$"*"$tdisplay"*L"$\ \mathrm{(s)}$", 
+#                 legendfontsize = 10, legend=:topleft, xlim=xlim, ylim=ylim,
+#                 xlabel=L"$x$",
+#                 xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
+#                 ylabel=L"$\mathbf{S}^{\mathbf{I},\!\!\!\!+}_5\!\!\!\!\!(x) \mathbf{u}$")
+#     end
+#     # p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
+#     # sleep(0.001)
+#     display(p)
+# end  
+# savefig(p, "ic1.pdf")
 
-# p = Plots.plot(spy(Dm[1], markersize=4,color=:darktest), title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_1} \; (N=11)$")
-# Plots.savefig(p, "spy-1.pdf")
-# p = Plots.plot(spy(Dm[2], markersize=4,color=:darktest), title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_k}, k \geq 2 \; (N=11)$")
-# Plots.savefig(p, "spy-2.pdf")
+
+# p = plot(spy(Dm[1], markersize=4,color=:darktest), 
+#         xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
+#         title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_1} \; (N=11)$")
+# savefig(p, "spy-1.pdf")
+# p = plot(spy(Dm[2], markersize=4,color=:darktest), 
+#         xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
+#         title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_k}, k \geq 2 \; (N=11)$")
+# savefig(p, "spy-2.pdf")
