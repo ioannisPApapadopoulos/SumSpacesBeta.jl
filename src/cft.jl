@@ -1,18 +1,9 @@
-function inverse_fourier_transform(F, t; t0=-1000, dt=0.001)
-    w = ifftshift(fftfreq(length(t), 1/dt) * 2 * pi)
-    
-    f = ifftshift(ifft(F(t)))
-    f = f .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
-
-    return (w[2:end], f[2:end])
-end
-
-
-function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
-    t=range(t0,-t0,step=dt)
+function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
+    ω=range(-W, W, step=δ)
+    ω = ω[1:end-1]
 
     # FIXME: Should probably find a nicer way around this
-    if μ ≈ 0 && real(λ) < 0 && λ ∈ t
+    if μ ≈ 0 && real(λ) < 0 && λ ∈ ω
         λ += 1e2*eps() * π
         @warn "μ ≈ 0, λ < 0, and λ ∈ Sample, we slightly perturb λ to avoid NaNs in the FFT computation in supporter_functions in cft.jl"
     end
@@ -83,7 +74,7 @@ function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
     # sFU_2 = k -> (1/c).*FU_2((1/c) .*k)
     # sFU_1 = k -> (1/c).*FU_1((1/c) .*k)
 
-    w = ifftshift((fftfreq(length(t), 1/dt)) * 2 * pi) 
+    x = ifftshift((fftfreq(length(ω), 1/δ)) * 2 * pi) 
     ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
     
     for els = 1:el_no
@@ -92,45 +83,46 @@ function supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
         sFwT1 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FwT1((1/ci) .*k)
         sFU0 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FU0((1/ci) .*k)
         sFU_1 = k -> (1/ci).*exp.(im.*k.*(di/ci)).*FU_1((1/ci) .*k)
-        append!(ywT0, [cifft(sFwT0, t, dt, t0, w)[2:end]])
-        append!(ywT1, [cifft(sFwT1, t, dt, t0, w)[2:end]])
-        append!(yU0, [cifft(sFU0, t, dt, t0, w)[2:end]])
-        append!(yU_1, [cifft(sFU_1, t, dt, t0, w)[2:end]])
+        append!(ywT0, [cifft(sFwT0, ω, δ, W, x)])
+        append!(ywT1, [cifft(sFwT1, ω, δ, W, x)])
+        append!(yU0, [cifft(sFU0, ω, δ, W, x)])
+        append!(yU_1, [cifft(sFU_1, ω, δ, W, x)])
     end
     
-    # w = ifftshift((fftfreq(length(t), 1/dt)) * 2 * pi) 
+    # x = ifftshift((fftfreq(length(ω), 1/δ)) * 2 * pi) 
     
-    # ywT0 = ifftshift(ifft(sFwT0(t)))
-    # ywT0 = ywT0 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    # ywT0 = ifftshift(ifft(sFwT0(ω)))
+    # ywT0 = ywT0 .* δ .* exp.(-im .*x .*W) .* length(ω) ./ ((2*pi))
 
-    # ywT1 = ifftshift(ifft(sFwT1(t)))
-    # ywT1 = ywT1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    # ywT1 = ifftshift(ifft(sFwT1(ω)))
+    # ywT1 = ywT1 .* δ .* exp.(-im .*x .*W) .* length(ω) ./ ((2*pi))
 
-    # yU_2 = ifftshift(ifft(sFU_2(t)))
-    # yU_2 = yU_2 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    # yU_2 = ifftshift(ifft(sFU_2(ω)))
+    # yU_2 = yU_2 .* δ .* exp.(-im .*x .*W) .* length(ω) ./ ((2*pi))
 
-    # yU_1 = ifftshift(ifft(sFU_1(t)))
-    # yU_1 = yU_1 .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+    # yU_1 = ifftshift(ifft(sFU_1(ω)))
+    # yU_1 = yU_1 .* δ .* exp.(-im .*x .*W) .* length(ω) ./ ((2*pi))
 
-    return (w[2:end], ywT0, yU_1, ywT1, yU0) 
+    return (x, ywT0, yU_1, ywT1, yU0) 
 end
 
-function cifft(f, t, dt, t0, w)
-    yf= ifftshift(ifft(f(t)))
-    yf = yf .* dt .* exp.(-im .*w .*t0) .* length(t) ./ ((2*pi))
+function cifft(f, ω, δ, W, x)
+    yf= ifftshift(ifft(f(ω)))
+    N = length(ω)
+    yf = (δ .* N .* exp.(-im .*x .*W)  ./ (2*pi)) .* yf
     return yf
 end
 
-function interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
+function interpolate_supporter_functions(x, ywT0, yU_1, ywT1, yU0)
     el_no = length(yU_1)
-    yU_1 = [interpolate((w,), real.(yU_1[j]), Gridded(Linear())) for j in 1:el_no]
-    yU0 = [interpolate((w,), real.(yU0[j]), Gridded(Linear())) for j in 1:el_no]
-    ywT0 = [interpolate((w,), real.(ywT0[j]), Gridded(Linear())) for j in 1:el_no]
-    ywT1 = [interpolate((w,), real.(ywT1[j]), Gridded(Linear())) for j in 1:el_no]
+    yU_1 = [interpolate((x,), real.(yU_1[j]), Gridded(Linear())) for j in 1:el_no]
+    yU0 = [interpolate((x,), real.(yU0[j]), Gridded(Linear())) for j in 1:el_no]
+    ywT0 = [interpolate((x,), real.(ywT0[j]), Gridded(Linear())) for j in 1:el_no]
+    ywT1 = [interpolate((x,), real.(ywT1[j]), Gridded(Linear())) for j in 1:el_no]
     return (ywT0, yU_1, ywT1, yU0)
 end
 
-function fft_supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
+function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
     # Special case analytical expressions
     if λ == μ == η ≈ 0
         ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
@@ -143,8 +135,8 @@ function fft_supporter_functions(λ, μ, η; t0=-1000., dt=0.001, a=[-1.,1.])
         end
     end 
     
-    (w, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, t0=t0, dt=dt, a=a)
-    uS = interpolate_supporter_functions(w, ywT0, yU_1, ywT1, yU0)
+    (x, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a)
+    uS = interpolate_supporter_functions(x, ywT0, yU_1, ywT1, yU0)
     return uS
 end
 
@@ -162,15 +154,26 @@ function coefficient_supporter_functions(A, x, uS, N; tol=1e-6)
     return (ywt0, yu_1, ywt1, yu0)
 end
 
-function fractional_heat_fourier_solve(F, t, timesteps)
+function inverse_fourier_transform(F, ω; W=1000, δ=0.001)
+    
+    x = ifftshift(fftfreq(length(ω), 1/δ) * 2 * pi)
+    N = length(ω)
+
+    f = ifftshift(ifft(F(ω)))
+    f = (δ .* N .* exp.(-im .*x .*W)  ./ (2*pi)) .* f
+
+    return (x, f)
+end
+
+function fractional_heat_fourier_solve(F, ω, timesteps)
     
     Fn = k -> F(k, 1)
-    (x, f) = inverse_fourier_transform(Fn, t)
+    (x, f) = inverse_fourier_transform(Fn, ω)
     
     fv = [f]
     for n = 2:timesteps
         Fn = k -> F(k, n)
-        (_, f) = inverse_fourier_transform(Fn, t)
+        (_, f) = inverse_fourier_transform(Fn, ω)
         append!(fv, [f])
     end
     return (x, fv)
