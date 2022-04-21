@@ -9,7 +9,7 @@ Solve the fractional heat equation with 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,
 """
 
 
-N = 11 # Truncation degree
+N = 5 # Truncation degree
 λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
 a = [-5,-3,-1,1.,3,5] # 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3]
@@ -64,19 +64,19 @@ for j in 1:el_no
 end
 
 # Initial condition, u₀ = √(1-x²)
-u₀ = zeros(1+el_no*(2N+6))
-u₀ = BlockArray(u₀, vcat(1,Fill(el_no,(length(u₀)-1)÷el_no)))
-u₀[Block.(6)][3] = 1.
-u = [u₀]
+# u₀ = zeros(1+el_no*(2N+6))
+# u₀ = BlockArray(u₀, vcat(1,Fill(el_no,(length(u₀)-1)÷el_no)))
+# u₀[Block.(6)][3] = 1.
+# u = [u₀]
 
-# u0 = x -> 1. ./ ((x.^2 .+ 1) )
-# u₀ = zeros(2*N+7)
-# u₀[6] = 1.
-# x = collocation_points(M, Me, a=a, endpoints=[-20.,20])
-# A = framematrix(x, eSp, N, norm="riemann")
-# u₀ = solvesvd(A, riemann(x, u0))#, tol=1e-3)
-# u₀₀= zeros(1+el_no*(2N+6)); u₀₀[1]=u₀[1]; u₀₀[2+4*el_no:4*el_no+length(u₀)]=u₀[2:end]
-# u = [u₀₀]
+u0 = x -> 1. ./ ((x.^2 .+ 1) )
+u₀ = zeros(2*N+7)
+u₀[6] = 1.
+x = collocation_points(M, Me, a=a, endpoints=[-20.,20])
+A = framematrix(x, eSp, N, norm="riemann")
+u₀ = solvesvd(A, riemann(x, u0))#, tol=1e-3)
+u₀₀= zeros(1+el_no*(2N+6)); u₀₀[1]=u₀[1]; u₀₀[2+4*el_no:4*el_no+length(u₀)]=u₀[2:end]
+u = [u₀₀]
 
 # Run solve loop for time-stepping
 timesteps=100
