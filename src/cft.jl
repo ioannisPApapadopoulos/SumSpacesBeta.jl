@@ -52,10 +52,10 @@ function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
     # Compute reference supporter functions
     ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
     for ss in s
-        sFwT0 = k -> (1/s).*FwT0((1/s) .*k, k)
-        sFwT1 = k -> (1/s).*FwT1((1/s) .*k, k)
-        sFU0 = k -> (1/s).*FU0((1/s) .*k, k)
-        sFU_1 = k -> (1/s).*FU_1((1/s) .*k, k)
+        sFwT0 = k -> (1/ss).*FwT0((1/ss) .*k, k)
+        sFwT1 = k -> (1/ss).*FwT1((1/ss) .*k, k)
+        sFU0 = k -> (1/ss).*FU0((1/ss) .*k, k)
+        sFU_1 = k -> (1/ss).*FU_1((1/ss) .*k, k)
         append!(ywT0, [cifft(sFwT0, ω, δ, W, x)])
         append!(ywT1, [cifft(sFwT1, ω, δ, W, x)])
         append!(yU0, [cifft(sFU0, ω, δ, W, x)])
@@ -78,7 +78,7 @@ function interpolate_supporter_functions(x, s, ywT0, yU_1, ywT1, yU0; a=[-1.,1.]
     ## for each element. 
 
     el_no = length(a)-1
-    c = (a[2:end] - a[1:end-1]) ./ 2; d =  (a[1:end-1] + a[2:end]) ./ 2
+    c = 2. ./ (a[2:end] - a[1:end-1]); d =  (a[1:end-1] + a[2:end]) ./ 2
 
 
     yU_1 = [interpolate((x .+ d[j],), real.(yU_1[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]

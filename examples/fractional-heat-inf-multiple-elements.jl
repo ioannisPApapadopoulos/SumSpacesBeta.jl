@@ -12,7 +12,7 @@ Solve the fractional heat equation with 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,
 N = 5 # Truncation degree
 λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 
-a = [-5,-3,-1,1.,3,5] # 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3]
+a = [-10,9,10.] # 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3]
 el_no = length(a)-1
 
 eSp = ElementSumSpace{1}(a) # Primal element sum space
@@ -30,6 +30,16 @@ A = framematrix(x, eSp, Nn) # Blocked frame matrix
 uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
 # Element primal sum space coefficients
 cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
+
+
+xx = -20:0.01:20
+p=plot()
+for el = 1
+    p=plot!(xx, ouS[el][1](xx))
+    p=plot!(xx, uS[el][1](xx))
+    display(p)
+end
+
 
 # Plot sanity check
 xx = -10:0.01:10
