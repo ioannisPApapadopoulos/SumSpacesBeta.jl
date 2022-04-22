@@ -1,4 +1,4 @@
-function supporter_functions(λ, μ, η; W=1000., δ=0.001)
+function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
     ω=range(-W, W, step=δ)
     ω = ω[1:end-1]
 
@@ -16,42 +16,53 @@ function supporter_functions(λ, μ, η; W=1000., δ=0.001)
     # FIXME: These list comprehensions are slow, can we speed it up? 
 
     ## Define function F[wT0] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
-    tFwT0 = k -> pi * besselj.(0, abs.(k)) ./ fmultiplier(k)
+    tFwT0 = (k,κ) -> pi * besselj.(0, abs.(k)) ./ fmultiplier(κ)
     if λ ≈ 0
-        FwT0 = k -> [fmultiplier(m) ≈ 0 ? (tFwT0(-eps())+tFwT0(eps()))/2 : tFwT0(m)  for m in k]
+        FwT0 = (k,κ) -> [fmultiplier(m) ≈ 0 ? (tFwT0(m-eps(),mm-eps())+tFwT0(m+eps(),mm+eps()))/2 : tFwT0(m,mm)  for (m,mm) in zip(k,κ)]
     else
-        FwT0 = k -> tFwT0(k)
+        FwT0 = (k,κ) -> tFwT0(k,κ)
     end
     
     ## Define function F[wT1] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
-    tFwT1 = k -> -im * pi * besselj.(1, k) ./ fmultiplier(k)
+    tFwT1 = (k, κ) -> -im * pi * besselj.(1, k) ./ fmultiplier(κ)
     if λ ≈ 0
-        FwT1 = k -> [fmultiplier(m) ≈ 0 ? (tFwT1(-eps())+tFwT1(eps()))/2 : tFwT1(m)  for m in k]
+        FwT1 = (k, κ) -> [fmultiplier(m) ≈ 0 ? (tFwT1(m-eps(),mm-eps())+tFwT1(m+eps(),mm+eps()))/2 : tFwT1(m,mm)  for (m,mm) in zip(k,κ)]
     else
-        FwT1 = k -> tFwT1(k)
+        FwT1 = (k,κ) -> tFwT1(k,κ)
     end
     
     ## Define function F[U0] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
-    tFU0 = k -> (pi * besselj.(1, abs.(k)) + 2 .*sin.(k)./k - 2 .* sin.(abs.(k)) ./ abs.(k)) ./ fmultiplier(k)
-    FU0 = k -> [m ≈ 0 ? (tFU0(-eps())+tFU0(eps()))/2 : tFU0(m)  for m in k]
+    tFU0 = (k,κ) -> (pi * besselj.(1, abs.(k)) + 2 .*sin.(k)./k - 2 .* sin.(abs.(k)) ./ abs.(k)) ./ fmultiplier(κ)
+    FU0 = (k,κ) -> [m ≈ 0 ? (tFU0(m-eps(),mm-eps())+tFU0(m+eps(),mm+eps()))/2 : tFU0(m,mm)  for (m,mm) in zip(k,κ)]
     
     ## Define function F[U-1] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
-    tFU_1 = k -> ( im*pi*k.*besselj.(0,abs.(k)) ./ abs.(k)) ./ fmultiplier(k)
-    FU_1 = k -> [m ≈ 0 ? (tFU_1(-eps())+tFU_1(eps()))/2 : tFU_1(m)  for m in k]
+    tFU_1 = (k,κ) -> ( im*pi*k.*besselj.(0,abs.(k)) ./ abs.(k)) ./ fmultiplier(κ)
+    FU_1 = (k,κ) -> [m ≈ 0 ? (tFU_1(m-eps(),mm-eps())+tFU_1(m+eps(),mm+eps()))/2 : tFU_1(m,mm)  for (m,mm) in zip(k,κ)]
     
-    ## Although I cannot prove it, experimentally different element supporter functions are essentially 
-    ## scaled and translated supporter functions for the element [-1,1]. Hence, we only do 4 FFTs to compute
-    ## the supporter functions on the reference element [-1,1]. These are then scaled and translated in
+    ## Different element supporter functions on the same sized elements are simply translations
+    ## of the supporter functions on a reference element s*[-1,1] where s is the scaling.
+    ## Hence, we only want to do 4 FFTs per differently sized element to compute
+    ## the supporter functions on the reference elements s*[-1,1]. These are then translated in
     ## interpolate_supporter_functions. 
+
+    s = unique(2. ./ (a[2:end] - a[1:end-1]))
+    
+    x = ifftshift((fftfreq(length(ω), 1/δ)) * 2 * pi) 
     
     # Compute reference supporter functions
-    x = ifftshift((fftfreq(length(ω), 1/δ)) * 2 * pi) 
-    ywT0 = cifft(FwT0, ω, δ, W, x)
-    ywT1= cifft(FwT1, ω, δ, W, x)
-    yU0 = cifft(FU0, ω, δ, W, x)
-    yU_1 = cifft(FU_1, ω, δ, W, x)
-    
-    return (x, ywT0, yU_1, ywT1, yU0) 
+    ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
+    for ss in s
+        sFwT0 = k -> (1/ss).*FwT0((1/ss) .*k, k)
+        sFwT1 = k -> (1/ss).*FwT1((1/ss) .*k, k)
+        sFU0 = k -> (1/ss).*FU0((1/ss) .*k, k)
+        sFU_1 = k -> (1/ss).*FU_1((1/ss) .*k, k)
+        append!(ywT0, [cifft(sFwT0, ω, δ, W, x)])
+        append!(ywT1, [cifft(sFwT1, ω, δ, W, x)])
+        append!(yU0, [cifft(sFU0, ω, δ, W, x)])
+        append!(yU_1, [cifft(sFU_1, ω, δ, W, x)])
+    end
+
+    return (x, s, ywT0, yU_1, ywT1, yU0) 
 end
 
 function cifft(f, ω, δ, W, x)
@@ -61,18 +72,19 @@ function cifft(f, ω, δ, W, x)
     return yf
 end
 
-function interpolate_supporter_functions(x, ywT0, yU_1, ywT1, yU0; a=[-1.,1.])
+function interpolate_supporter_functions(x, s, ywT0, yU_1, ywT1, yU0; a=[-1.,1.])
 
     ## Scale and translate the reference supporter functions during the interpolation
     ## for each element. 
 
     el_no = length(a)-1
-    c = (a[2:end] - a[1:end-1]) ./ 2; d =  (a[1:end-1] + a[2:end]) ./ 2
+    c = 2. ./ (a[2:end] - a[1:end-1]); d =  (a[1:end-1] + a[2:end]) ./ 2
 
-    yU_1 = [interpolate((c[j].*x .+ d[j],), real.(yU_1), Gridded(Linear())) for j in 1:el_no]
-    yU0 =  [interpolate((c[j].*x .+ d[j],), real.(yU0), Gridded(Linear())) for j in 1:el_no]
-    ywT0 = [interpolate((c[j].*x .+ d[j],), real.(ywT0), Gridded(Linear())) for j in 1:el_no]
-    ywT1 = [interpolate((c[j].*x .+ d[j],), real.(ywT1), Gridded(Linear())) for j in 1:el_no]
+
+    yU_1 = [interpolate((x .+ d[j],), real.(yU_1[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
+    yU0 =  [interpolate((x .+ d[j],), real.(yU0[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
+    ywT0 = [interpolate((x .+ d[j],), real.(ywT0[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
+    ywT1 = [interpolate((x .+ d[j],), real.(ywT1[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
     return (ywT0, yU_1, ywT1, yU0)
 end
 
@@ -89,8 +101,8 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
         end
     end 
     
-    (x, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ)
-    uS = interpolate_supporter_functions(x, ywT0, yU_1, ywT1, yU0, a=a)
+    (x, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a)
+    uS = interpolate_supporter_functions(x, s, ywT0, yU_1, ywT1, yU0, a=a)
     return uS
 end
 
