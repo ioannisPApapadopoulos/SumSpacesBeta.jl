@@ -6,7 +6,7 @@ import LinearAlgebra: I
 Solve the fractional heat equation with one element at [-1,1]. 
 """
 
-N = 101 # Truncation degree
+N = 5 # Truncation degree
 λ = 1e2; μ = 0; η = 0; Δt = 1/λ # Constants
 a = [-50.,50]
 
@@ -15,13 +15,13 @@ Sd = SumSpaceD(a) # Dual sum space
 
 M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
-x = collocation_points(M, Me, endpoints=100) # Collocation points
+x = collocation_points(M, Me, endpoints=[-100.,100.]) # Collocation points
 Nn = min(N,21)
 
-A = framematrix(x, Sp, Nn, M, Me) # Blocked frame matrix
+A = framematrix(x, Sp, Nn) # Blocked frame matrix
 
 # Compute support functions
-# uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
+uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
 # Primal sum space coefficients
 cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
 

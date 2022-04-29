@@ -27,9 +27,9 @@ Nn = N#min(N,7) # Truncation degree to approximate the supporter functions
 A = framematrix(x, eSp, Nn) # Blocked frame matrix
 
 # Compute support functions
-uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
+@time uS = fft_supporter_functions(λ, μ, η, a=a); # Actual functions
 # Element primal sum space coefficients
-cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
+@time cuS = coefficient_supporter_functions(A, x, uS, 2N+3); 
 
 # Plot sanity check
 xx = -10:0.01:10
@@ -80,7 +80,7 @@ u = [u₀]
 
 # Run solve loop for time-stepping
 timesteps=100
-for k = 1:timesteps
+@time for k = 1:timesteps
     u1 = []
     
     # Map from ASp to Sd
@@ -128,7 +128,7 @@ d = (x,t,u) -> abs.(y(x,t) .- ASp[x,1:length(u)]*u)
 errors = []
 
 # anim = @animate  for k = 2: timesteps+1
-for k = 2#:timesteps+1
+for k = 2:timesteps+1
     t = Δt*(k-1)
     
     tdisplay = round(t, digits=2)
@@ -136,25 +136,25 @@ for k = 2#:timesteps+1
     
     dx = x->d(x,t,u[k])
     # append!(errors, sqrt(quadgk(dx, -5, 5)[1]))
-    # append!(errors, norm(real.(fv[k-1][-20 .< fx .< 20])-ASp[xx,1:length(u[k])]*u[k], Inf))
+    append!(errors, norm(real.(fv[k-1][-20 .< fx .< 20])-ASp[xx,1:length(u[k])]*u[k], Inf))
 
-    p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 5 elements", legend=:topleft, xlim=xlim, ylim=ylim)
-    p = plot!(xx, real.(fv[k-1][-20 .< fx .< 20]), label="Fourier solution", legend=:topleft, xlim=xlim, ylim=ylim)
+    # p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 5 elements", legend=:topleft, xlim=xlim, ylim=ylim)
+    # p = plot!(xx, real.(fv[k-1][-20 .< fx .< 20]), label="Fourier solution", legend=:topleft, xlim=xlim, ylim=ylim)
     # p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
     # sleep(0.001)
-    display(p)
+    # display(p)
 end
 # gif(anim, "anim_fps10.gif", fps = 10)
 
 # plot(2:length(errors)+1, errors5)
-# plot!(2:length(errors)+1, errors, legend=:none, 
-#     title=L"\mathrm{Error \ norm}",
-#     yaxis=:log,
-#     markers=:circle,
-#     xlabel=L"$k$",
-#     xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
-#     ylabel=L"$\Vert u(x,k\Delta t)-\mathbf{S}^{\mathbf{I},\!\!\!\!+}_5\!\!\!\!\!(x) \mathbf{u}_k)\Vert_\infty$")
-# savefig("errors-infty.pdf")
+p = plot(2:length(errors)+1, errors, legend=:none, 
+    title=L"\mathrm{Error \ norm}",
+    # yaxis=:log,
+    markers=:circle,
+    xlabel=L"$k$",
+    xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
+    ylabel=L"$\mathrm{FFT}-\mathbf{S}^{\mathbf{I},\!\!\!\!+}_5\!\!\!\!\!(x) \mathbf{u}_k)\Vert_\infty$")
+savefig(p, "errors-infty-W0.pdf")
  
 # xx = -10:0.01:10
 # xlim = [xx[1],xx[end]]; ylim = [-0.02,1]
