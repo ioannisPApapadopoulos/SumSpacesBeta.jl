@@ -1,4 +1,4 @@
-function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
+function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false)
     ω=range(-W, W, step=δ)
     ω = ω[1:end-1]
 
@@ -9,7 +9,8 @@ function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
     end
 
     fmultiplier = k -> (λ .- im.*μ.*sign.(k) .+im.*η.*k .+ abs.(k))
-    
+    hfmultiplier = k -> (- λ.*im.*sign.(k) .- μ .+ η.*abs.(k) .- im.*k)
+
     # For certain values of λ, μ and η, fmultiplier can be equal to 0. This causes
     # NaNs in the ifft routine. To avoid this we watch if fmultiplier=0 and if it does
     # then we average the Fourier transform around 0 to get an approximate of the limit.
@@ -24,7 +25,12 @@ function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
     end
     
     ## Define function F[wT1] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
-    tFwT1 = (k, κ) -> -im * pi * besselj.(1, k) ./ fmultiplier(κ)
+    if stabilise == false
+        tFwT1 = (k, κ) -> -im * pi * besselj.(1, k) ./ fmultiplier(κ)
+    else
+        tFwT1 = (k, κ) -> (-im).^(N+2) * pi * besselj.(N+2, k) ./ fmultiplier(κ)
+    end
+    
     if λ ≈ 0
         FwT1 = (k, κ) -> [fmultiplier(m) ≈ 0 ? (tFwT1(m-eps(),mm-eps())+tFwT1(m+eps(),mm+eps()))/2 : tFwT1(m,mm)  for (m,mm) in zip(k,κ)]
     else
@@ -32,7 +38,11 @@ function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
     end
     
     ## Define function F[U0] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
-    tFU0 = (k,κ) -> (pi * besselj.(1, abs.(k)) + 2 .*sin.(k)./k - 2 .* sin.(abs.(k)) ./ abs.(k)) ./ fmultiplier(κ)
+    if stabilise == false
+        tFU0 = (k,κ) -> (pi * besselj.(1, abs.(k)) + 2 .*sin.(k)./k - 2 .* sin.(abs.(k)) ./ abs.(k)) ./ fmultiplier(κ)
+    else
+        tFU0 = (k,κ) -> ( (-im).^(N+2)*pi.*besselj.(N+2, k) ) ./ hfmultiplier(κ)
+    end
     FU0 = (k,κ) -> [m ≈ 0 ? (tFU0(m-eps(),mm-eps())+tFU0(m+eps(),mm+eps()))/2 : tFU0(m,mm)  for (m,mm) in zip(k,κ)]
     
     ## Define function F[U-1] / (λ - i*μ*sgn(k)+ iηk + abs.(k))
@@ -88,7 +98,7 @@ function interpolate_supporter_functions(x, s, ywT0, yU_1, ywT1, yU0; a=[-1.,1.]
     return (ywT0, yU_1, ywT1, yU0)
 end
 
-function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
+function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false)
     # Special case analytical expressions
     if λ == μ == η ≈ 0
         ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
@@ -101,7 +111,7 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.])
         end
     end 
     
-    (x, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a)
+    (x, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a, N=N, stabilise=stabilise)
     uS = interpolate_supporter_functions(x, s, ywT0, yU_1, ywT1, yU0, a=a)
     return uS
 end
