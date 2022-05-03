@@ -32,7 +32,7 @@ export solvesvd, collocation_points, riemann, evaluate, framematrix, dualframema
 
 # Affine transform to scale and shift polys. 
 function affinetransform(a,b,x)
-    y = 2/(b-a) .* (x.-(a+b)/2)
+    y = 2 ./(b.-a) .* (x.-(a.+b)./2)
 end
 
 half_laplace_wT0 = xx -> [abs(x) <= 1 ? log(2)-Base.MathConstants.eulergamma : log(2)-Base.MathConstants.eulergamma-asinh(sqrt(x^2-1)) for x in xx]

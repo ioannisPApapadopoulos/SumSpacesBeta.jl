@@ -21,20 +21,32 @@ function solvesvd(A, b; tol=1e-7, block=true)
     return c
 end
 
+function at(a,b,x)
+    (b-a)/2 * x .+ (b+a)/2
+end
+
 # Construct collocation points
 function collocation_points(M, Me; a=[-1.,1.], endpoints=[-5.,5.], innergap = 0, outergap=1e-4)
     Tp = Float64
     el_no = length(a)-1
 
     x = Array{Tp}(undef,el_no*M+2*Me)
+    xnodes = LinRange{Tp}(innergap,1-innergap,M)
+    chebnodes = sort(cos.(π.*xnodes))
     for el = 1:el_no
-        x[(el-1)*M+1:el*M] = LinRange{Tp}(a[el]+innergap,a[el+1]-innergap,M)
+        x[(el-1)*M+1:el*M] = at(a[el], a[el+1], chebnodes) 
+        #LinRange{Tp}(a[el]+innergap,a[el+1]-innergap,M)
     end
     # x[1:M] = LinRange{Tp}(0+innergap,1-innergap,M)
     # x[1:M] = cos.(π.*x[1:M])
-    x[el_no*M+1:el_no*M+Me] = LinRange{Tp}(endpoints[1],a[1]-outergap,Me)
-    x[el_no*M+1+Me:el_no*M+2*Me] = LinRange{Tp}(a[end]+outergap,endpoints[2],Me)
-    return unique(x)
+    xnodes = LinRange{Tp}(innergap,1-innergap,Me)
+    chebnodes = sort(cos.(π.*xnodes))
+    x[el_no*M+1:el_no*M+Me] = at(endpoints[1], a[1], chebnodes) 
+    x[el_no*M+1+Me:el_no*M+2*Me] = at(a[end],endpoints[2],chebnodes)
+
+    # x[el_no*M+1:el_no*M+Me] = LinRange{Tp}(endpoints[1],a[1]-outergap,Me)
+    # x[el_no*M+1+Me:el_no*M+2*Me] = LinRange{Tp}(a[end]+outergap,endpoints[2],Me)
+    return sort(unique(x))
 end
 
 # Convert function evaluation to Riemann sum
