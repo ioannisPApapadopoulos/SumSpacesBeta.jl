@@ -115,6 +115,8 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5,
     # ywT0 = [[]]; yU_1=[[]]; ywT1=[[]]; yU0=[[]]; x = Array([]); s=[1.0]
     if correction==true
         (x1, x2, ywT0, yU_1, ywT1, yU0) = mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N, stabilise=stabilise)
+    else
+        x1 = x; x2 = x;
     end
     uS = interpolate_supporter_functions(x1, x2, s, ywT0, yU_1, ywT1, yU0, a=a)
     return uS
