@@ -35,15 +35,15 @@ norm(ua(xx).-eSp[xx,1:length(uc)]*uc, Inf)
 
 
 # Compute support functions
-uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=100000, δ=1e-2, stabilise=true) # Actual functions
+uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e4, δ=1e-2, stabilise=true, correction=true) # Actual functions
 # Element primal sum space coefficients
-# cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
+cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
 
 
 # Plot sanity check
-xx = -2:0.001:2
-plot(xx, uS[4][3](xx))
-y = eSp[xx,1:length(cuS[1][1])]*cuS[1][1]
+xx = -10:0.001:10
+plot(xx, uS[2][3](xx))
+y = eSp[xx,1:length(cuS[1][1])]*cuS[4][3]
 plot!(xx, y)
 
 # Create appended sum space
@@ -94,19 +94,21 @@ end
 # Rearrange coefficients back to interlaced
 u = coefficient_interlace(u, N, K, appended=true)
 fc = coefficient_interlace(fc, N, K, appended=true)
-u[1] = u[1] - ASp[1e2,1:length(u)]'*u +ua(1e2)
+# u[1] = u[1] - ASp[1e2,1:length(u)]'*u[1:end]
+# u[1] = - ASp[0,2:length(u)]'*u[2:end] +ua(0)
+# u[1] = 0
 
 p = plot() 
-xx = -20.:0.01:20.
+xx = Array(-5.:0.01:5); #xx = [xx[1:length(xx)÷2]' xx[length(xx)÷2+2:end]']'
 ylim = [0.,1.]
 errors = []
-norm(ua(xx).-ASp[xx,1:length(u)]*u, Inf)
-# norm(fa(xx).-eSd[xx,1:length(fc)]*fc, Inf)
+norm(ua(xx) .- ASp[xx,1:length(u)]*u, Inf)
+d = fa(xx).-eSd[xx,1:length(fc)]*fc; d[isnan.(d)].=0.; norm(d, Inf)
 
-findmax(ua(xx).-ASp[xx,1:length(u)]*u)[2]
-xx[2101]
+findmax(abs.(ua(xx).-ASp[xx,1:length(u)]*u))[2]
+xx[findmax(abs.(ua(xx).-ASp[xx,1:length(u)]*u))[2]]
 
-xx = -25:0.01:25
+# xx = Array(-5.:0.01:5); xx = [xx[1:length(xx)÷2]' xx[length(xx)÷2+2:end]']'
 yy = ASp[xx,1:length(u)]*u
 # append!(errors, norm(dx(xx), Inf))
 p = plot(xx,yy, title="Sheng2020", label="Sum space - 5 elements", legend=:topleft, ylim=ylim)
@@ -117,7 +119,7 @@ display(p)
 
 p = plot(xx, 
     abs.(ua(xx) .- ASp[xx,1:length(u)]*u), 
-    yaxis=:log,
+    # yaxis=:log,
     ylabel="Error",
     xlabel="x",
     title="Error plot of solution",
@@ -135,6 +137,15 @@ p = plot(xx,
 savefig(p,"rhs-error-plot.png")
 
 p = plot(xx, 
+    abs.(ua(xx) .- eSp[xx,1:length(uc)]*uc),
+    ylabel="Error",
+    xlabel="x",
+    title="Error plot of frame solution",
+    legend=false)
+
+savefig(p,"approx-frame-error-plot.png")
+
+p = plot(xx, 
     abs.(fa(xx) .- eSd[xx,1:length(fc)]*fc),
     ylabel="Error",
     xlabel="x",
@@ -143,8 +154,24 @@ p = plot(xx,
 
 savefig(p,"computed-rhs-error-plot.png")
 
+p = plot(xx, 
+    abs.(fa(xx) .- eSd[xx,1:length(fd)]*coefficient_interlace(fd, N, K, appended=true)),
+    ylabel="Error",
+    xlabel="x",
+    title="Error plot of dual frame RHS",
+    legend=false)
 
-@time weval(W`1/(2*Pi)*NIntegrate[Pi * BesselJ[0,k]/(1 + Abs[k]) * Exp[I   k], {k,-∞,∞}]`)
-xx = -2:0.001:2
+savefig(p,"dual-frame-error-plot.png")
+
+
+b = weval(W`Re[1/(2*Pi)*NIntegrate[Pi * BesselJ[0,k]/(1 + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12, MaxRecursion -> 100]]`,y=0)
+a1 = weval(W`Re[1/(2*Pi)*NIntegrate[I*Pi*k*BesselJ[0,Abs[k]]/Abs[k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=0)
+a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15]]`;λ=λ,η=η,μ=μ,N=N,y=0.)
+# ywT0=[vcat(ywT0[1],[a1,a2])]
+xx = -2:0.01:2
 plot(xx, uS[3][3](xx))
 @time weval(W`1/(2*Pi)*NIntegrate[Pi * (-I)^33 BesselJ[33,k]/(1 + Abs[k]) * Exp[I  k], {k,-∞,∞}]`)
+
+
+
+a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=1,η=0,μ=0,N=N,y=0.)

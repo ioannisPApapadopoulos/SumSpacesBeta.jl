@@ -82,7 +82,7 @@ function cifft(f, ω, δ, W, x)
     return yf
 end
 
-function interpolate_supporter_functions(x, s, ywT0, yU_1, ywT1, yU0; a=[-1.,1.])
+function interpolate_supporter_functions(x1, x2, s, ywT0, yU_1, ywT1, yU0; a=[-1.,1.])
 
     ## Scale and translate the reference supporter functions during the interpolation
     ## for each element. 
@@ -91,14 +91,14 @@ function interpolate_supporter_functions(x, s, ywT0, yU_1, ywT1, yU0; a=[-1.,1.]
     c = 2. ./ (a[2:end] - a[1:end-1]); d =  (a[1:end-1] + a[2:end]) ./ 2
 
 
-    yU_1 = [interpolate((x .+ d[j],), real.(yU_1[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
-    yU0 =  [interpolate((x .+ d[j],), real.(yU0[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
-    ywT0 = [interpolate((x .+ d[j],), real.(ywT0[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
-    ywT1 = [interpolate((x .+ d[j],), real.(ywT1[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
+    yU_1 = [interpolate((x1 .+ d[j],), real.(yU_1[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
+    yU0 =  [interpolate((x2 .+ d[j],), real.(yU0[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
+    ywT0 = [interpolate((x1 .+ d[j],), real.(ywT0[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
+    ywT1 = [interpolate((x2 .+ d[j],), real.(ywT1[findall(x->x==c[j],s)[1]])[:], Gridded(Linear())) for j in 1:el_no]
     return (ywT0, yU_1, ywT1, yU0)
 end
 
-function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false)
+function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false, correction=false)
     # Special case analytical expressions
     if λ == μ == η ≈ 0
         ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
@@ -112,7 +112,11 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5,
     end 
     
     (x, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a, N=N, stabilise=stabilise)
-    uS = interpolate_supporter_functions(x, s, ywT0, yU_1, ywT1, yU0, a=a)
+    # ywT0 = [[]]; yU_1=[[]]; ywT1=[[]]; yU0=[[]]; x = Array([]); s=[1.0]
+    if correction==true
+        (x1, x2, ywT0, yU_1, ywT1, yU0) = mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N, stabilise=stabilise)
+    end
+    uS = interpolate_supporter_functions(x1, x2, s, ywT0, yU_1, ywT1, yU0, a=a)
     return uS
 end
 
@@ -153,4 +157,63 @@ function fractional_heat_fourier_solve(F, ω, timesteps)
         append!(fv, [f])
     end
     return (x, fv)
+end
+
+function parse_mathematica(val)
+    val1 = split(val.value,"`")
+    val2 = split(val1[2],"^")
+    val1 = parse(Float64, val1[1])
+    if length(val2) > 1
+        val1 = val1 * 10^parse(Float64,val2[2])
+    end
+    return val1
+end
+
+function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabilise=false)
+    xx1 = Array(-10:0.01:10)
+    xx2 = Array(-1.05:0.01:1.05)
+    
+    ywT0[1] = ywT0[1][x.!=0];yU_1[1] = yU_1[1][x.!=0];ywT1[1] = ywT1[1][x.!=0];yU0[1] = yU0[1][x.!=0];x = x[x.!=0]
+
+    x1 = vcat(x, xx1); perm1 = sortperm(x1); x1 = sort(x1); 
+    x2 = vcat(x, xx2); perm2 = sortperm(x2); x2 = sort(x2); 
+
+    for y in xx1
+        print(y)
+        a1 = weval(W`Re[1/(2*Pi)*NIntegrate[Pi * BesselJ[0,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+        a1 = parse_mathematica(a1)
+
+        ywT0 = [vcat(ywT0[1],[a1])]
+   
+        a1 = weval(W`Re[1/(2*Pi)*NIntegrate[I*Pi*k*BesselJ[0,Abs[k]]/Abs[k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+        a1 = parse_mathematica(a1)
+        yU_1 = [vcat(yU_1[1],[a1])]
+    end
+
+    for y in xx2
+        print(y)
+        if stabilise==true
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,N=N,y=y)
+        else
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+        end
+        a1 = parse_mathematica(a1)
+        ywT1 = [vcat(ywT1[1],[a1])]
+        
+        if stabilise==true
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,N=N,y=y)
+        else
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+        end
+        a1 = parse_mathematica(a1)
+        yU0 = [vcat(yU0[1],[a1])]
+
+    end
+    ywT0[1] = ywT0[1][perm1]
+    yU_1[1] = yU_1[1][perm1]
+    ywT1[1] = ywT1[1][perm2]
+    yU0[1] = yU0[1][perm2]
+
+
+    return (x1, x2, ywT0, yU_1, ywT1, yU0)
 end

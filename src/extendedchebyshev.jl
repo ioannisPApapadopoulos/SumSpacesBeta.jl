@@ -96,7 +96,7 @@ axes(H::ExtendedWeightedChebyshev) = (Inclusion(ℝ), OneToInf())
 const ExtendedWeightedChebyshevT = ExtendedWeightedChebyshev{1}
 
 function getindex(H::ExtendedWeightedChebyshevT{T}, x::Real, j::Int)::T where T
-    x in ChebyshevInterval() && return Weighted(ChebyshevT{T}())[x,j]
+    -1 <= x <= 1 && return Weighted(ChebyshevT{T}())[x,j]
     return 0.
 end
 
