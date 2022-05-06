@@ -98,7 +98,7 @@ function interpolate_supporter_functions(x1, x2, s, ywT0, yU_1, ywT1, yU0; a=[-1
     return (ywT0, yU_1, ywT1, yU0)
 end
 
-function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false, correction=false)
+function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false, correction=false, x1 = [], x2 = [], ywT0 =[], yU_1=[], ywT1=[], yU0=[])
     # Special case analytical expressions
     if λ == μ == η ≈ 0
         ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
@@ -111,12 +111,16 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5,
         end
     end 
     
-    (x, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a, N=N, stabilise=stabilise)
-    # ywT0 = [[]]; yU_1=[[]]; ywT1=[[]]; yU0=[[]]; x = Array([]); s=[1.0]
-    if correction==true && length(s) == 1 && s[1] == 1
-        (x1, x2, ywT0, yU_1, ywT1, yU0) = mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N, stabilise=stabilise)
+    if isempty(x1) || isempty(x2) || isempty(ywT0) || isempty(yU_1) || isempty(ywT1) || isempty(yU0) 
+        (x, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a, N=N, stabilise=stabilise)
+        # ywT0 = [[]]; yU_1=[[]]; ywT1=[[]]; yU0=[[]]; x = Array([]); s=[1.0]
+        if correction==true && length(s) == 1 && s[1] == 1
+            (x1, x2, ywT0, yU_1, ywT1, yU0) = mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N, stabilise=stabilise)
+        else
+            x1 = x; x2 = x;
+        end
     else
-        x1 = x; x2 = x;
+        s = [1.0]
     end
     uS = interpolate_supporter_functions(x1, x2, s, ywT0, yU_1, ywT1, yU0, a=a)
     return uS
