@@ -6,14 +6,12 @@ using MathLink
 using DelimitedFiles
 
 errors = []
-uSS = []
 # append!(errors, [[1e-5,31]])
 # writedlm("errors-inf.txt",errors)
 
-for N in [3,5,7,11,13,15,21,25,31,41]
+for N in [13,15,21,25,31,41] #3,5,7,11,
 # N = 31  # Truncation degree
     λ = 1; μ = 0; η = 0# Constants
-    eps = 2e-1;
 
     a = [-5,-3,-1.,1,3,5]
     # a = [6,-2.,2,6]
@@ -34,17 +32,15 @@ for N in [3,5,7,11,13,15,21,25,31,41]
     uc = A[1:end,1:end] \ riemann(x, ua)
 
 
-    xx = -25:0.01:25
-    plot(xx,ua(xx))
-    plot!(xx, eSp[xx,1:length(uc)]*uc)
-    norm(ua(xx).-eSp[xx,1:length(uc)]*uc, Inf)
+    # xx = -25:0.01:25
+    # plot(xx,ua(xx))
+    # plot!(xx, eSp[xx,1:length(uc)]*uc)
+    # norm(ua(xx).-eSp[xx,1:length(uc)]*uc, Inf)
 
 
 
     # Compute support functions
     uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e4, δ=1e-2, stabilise=true, correction=true) # Actual functions
-    append!(uSS, [[uS, N]])
-    writedlm("uS.txt", uSS)
     # Element primal sum space coefficients
     cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
 
