@@ -12,7 +12,7 @@ errors = []
 # for N in [3,5,7,11,13,15,21,25,31,41] #,
 for N in [31]
 # N = 31  # Truncation degree
-    λ = 1; μ = 0; η = 0# Constants
+    λ = 1; μ = 1; η = 1# Constants
 
     a = [-5,-3,-1.,1,3,5]
     # a = [6,-2.,2,6]
@@ -23,7 +23,10 @@ for N in [31]
 
     ua = x ->  exp.(-x.^2)
 
-    fa = x -> 2/gamma(1/2) * _₁F₁.(1,1/2,-x.^2) .+ λ * exp.(-x.^2)
+    fa = x -> ((λ .- 2η.*x) .* exp.(-x.^2) 
+                .+ 2/gamma(1/2) * _₁F₁.(1,1/2,-x.^2)
+                .+ μ * exp.(-x.^2) * abs.(x) .* erfi.(abs.(x)) ./ x
+    )
 
     M = max(N^2,5001)  # Number of collocation points in [-1,1]
     Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
