@@ -22,14 +22,14 @@ M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10 + 1  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me, a=a, endpoints=[-20.,20]) # Collocation points
 
-Nn = N#min(N,7) # Truncation degree to approximate the supporter functions
+Nn = min(N,5) # Truncation degree to approximate the supporter functions
 
 A = framematrix(x, eSp, Nn) # Blocked frame matrix
 
 # Compute support functions
-@time uS = fft_supporter_functions(λ, μ, η, a=a); # Actual functions
+# uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
 # Element primal sum space coefficients
-@time cuS = coefficient_supporter_functions(A, x, uS, 2N+3); 
+cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
 
 # Plot sanity check
 xx = -10:0.01:10
@@ -64,23 +64,23 @@ for j in 1:el_no
 end
 
 # Initial condition, u₀ = √(1-x²)
-u₀ = zeros(1+el_no*(2N+6))
-u₀ = BlockArray(u₀, vcat(1,Fill(el_no,(length(u₀)-1)÷el_no)))
-u₀[Block.(6)][3] = 1.
-u = [u₀]
+# u₀ = zeros(1+el_no*(2N+6))
+# u₀ = BlockArray(u₀, vcat(1,Fill(el_no,(length(u₀)-1)÷el_no)))
+# u₀[Block.(6)][3] = 1.
+# u = [u₀]
 
-# u0 = x -> 1. ./ ((x.^2 .+ 1) )
-# u₀ = zeros(2*N+7)
-# u₀[6] = 1.
-# x = collocation_points(M, Me, a=a, endpoints=[-20.,20])
-# A = framematrix(x, eSp, N, norm="riemann")
-# u₀ = solvesvd(A, riemann(x, u0))#, tol=1e-3)
-# u₀₀= zeros(1+el_no*(2N+6)); u₀₀[1]=u₀[1]; u₀₀[2+4*el_no:4*el_no+length(u₀)]=u₀[2:end]
-# u = [u₀₀]
+u0 = x -> 1. ./ ((x.^2 .+ 1) )
+u₀ = zeros(2*N+7)
+u₀[6] = 1.
+x = collocation_points(M, Me, a=a, endpoints=[-20.,20])
+A = framematrix(x, eSp, N, norm="riemann")
+u₀ = solvesvd(A, riemann(x, u0))#, tol=1e-3)
+u₀₀= zeros(1+el_no*(2N+6)); u₀₀[1]=u₀[1]; u₀₀[2+4*el_no:4*el_no+length(u₀)]=u₀[2:end]
+u = [u₀₀]
 
 # Run solve loop for time-stepping
 timesteps=100
-@time for k = 1:timesteps
+for k = 1:timesteps
     u1 = []
     
     # Map from ASp to Sd
@@ -121,14 +121,14 @@ end
 
 # Plot solution
 p = plot() 
-xx = fx[-20 .< fx .< 20]
+xx = -20:0.01:20
 xlim = [xx[1],xx[end]]; ylim = [-0.02,1]
 y = (x,t) -> (1 + t) ./ ((x.^2 .+ (1+t).^2))
 d = (x,t,u) -> abs.(y(x,t) .- ASp[x,1:length(u)]*u)
 errors = []
 
 # anim = @animate  for k = 2: timesteps+1
-for k = 2:timesteps+1
+for k = 1:timesteps+1
     t = Δt*(k-1)
     
     tdisplay = round(t, digits=2)
@@ -136,25 +136,22 @@ for k = 2:timesteps+1
     
     dx = x->d(x,t,u[k])
     # append!(errors, sqrt(quadgk(dx, -5, 5)[1]))
-    append!(errors, norm(real.(fv[k-1][-20 .< fx .< 20])-ASp[xx,1:length(u[k])]*u[k], Inf))
+    append!(errors, norm(dx(xx), Inf))
 
-    # p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 5 elements", legend=:topleft, xlim=xlim, ylim=ylim)
-    # p = plot!(xx, real.(fv[k-1][-20 .< fx .< 20]), label="Fourier solution", legend=:topleft, xlim=xlim, ylim=ylim)
-    # p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
+    p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
+    p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
     # sleep(0.001)
-    # display(p)
+    display(p)
 end
 # gif(anim, "anim_fps10.gif", fps = 10)
 
-# plot(2:length(errors)+1, errors5)
-p = plot(2:length(errors)+1, errors, legend=:none, 
-    title=L"\mathrm{Error \ norm}",
-    # yaxis=:log,
-    markers=:circle,
-    xlabel=L"$k$",
-    xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
-    ylabel=L"$\mathrm{FFT}-\mathbf{S}^{\mathbf{I},\!\!\!\!+}_5\!\!\!\!\!(x) \mathbf{u}_k)\Vert_\infty$")
-savefig(p, "errors-infty-W0.pdf")
+# plot(1:length(errors), errors, legend=:none, 
+#     title=L"\mathrm{Error \ norm}",
+#     markers=:circle,
+#     xlabel=L"$k$",
+#     xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
+#     ylabel=L"$\Vert u(x,k\Delta t)-\mathbf{S}^{\mathbf{I},\!\!\!\!+}_5\!\!\!\!\!(x) \mathbf{u}_k)\Vert_\infty$")
+# savefig("errors-infty.pdf")
  
 # xx = -10:0.01:10
 # xlim = [xx[1],xx[end]]; ylim = [-0.02,1]
