@@ -204,6 +204,7 @@ function \(Sd::ElementSumSpace{2}, ASp::ElementAppendedSumSpace)
         # A  = append!(A, [Bm * Id])
     # end
     Bm = Id_Sp_Sd(ASp)[1:2N+7+(el_no-1)*(2N+6),1:2N+3+(el_no-1)*(2N+2)]
+    Bm[3*el_no+2,1] = 1.
     
     rows = [size(Bm,1)]; cols = vcat([1], Fill(el_no, (2*N+6)))
     A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
@@ -223,8 +224,29 @@ function Id_Sp_Sd(ASp)
     ld = Diagonal(((-1).^((0:∞).÷el_no)) )*fracvec
     dat = BlockBroadcastArray(hcat,zs,ld)
     
-    dat = BlockBroadcastArray(hcat,ld,zs,zs,zs,zs,zs,zs,zs,-ld,zs,zs,zs)
-    dat = BlockVcat([-1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,1.]', dat)
-    A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (3,0))   
+    # dat = BlockBroadcastArray(hcat,ld,zs,zs,zs,zs,zs,zs,zs,-ld,zs,zs,zs)
+    dat = BlockBroadcastArray(hcat,ld,zs,-ld)
+    # dat = BlockVcat([-1.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]', dat)
+    dat = BlockVcat([-1.,0.,0.]', dat)
+    A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (2,0), (0,0))   
     return A
+end
+
+# x Sp -> Sp
+function jacobimatrix(Sp::ElementSumSpace{1})
+    # FIXME: Temporary hack in finite-dimensional indexing
+    N = Int64(1e2)
+
+    J = jacobimatrix(SumSpace{1}())[1:2N+3,1:2N+3]
+    J[2,1]=0
+
+    Jm = []
+
+    a = (Sp.I[1:end-1] + Sp.I[2:end]) ./ 2
+    for j = 1:(length(Sp.I)-1)
+        J[1,1] = a[j]
+        append!(Jm, [J[1:end,1:end]])
+    end
+
+    return Jm
 end

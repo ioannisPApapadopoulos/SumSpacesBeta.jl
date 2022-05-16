@@ -199,3 +199,14 @@ function *(H::Hilbert{<:Any,<:Any,<:Any}, Sp::SumSpace{1})
     A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (0,0), (1,1))
     return ApplyQuasiMatrix(*, SumSpace{1,T}(Sp.I), A)
 end
+
+# x Sp -> Sp
+function jacobimatrix(Sp::SumSpace{1})
+    T = eltype(Sp)
+    halfvec = mortar(Fill.(1/2,Fill(2,∞)))
+    zs = mortar(Zeros.(Fill(2,∞)))
+    dat = BlockBroadcastArray(hcat,halfvec,zs,zs,zs,halfvec,zs)
+    dat = BlockVcat([0,0,0,0,0,1/2]', dat)
+    A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (1,1), (1,0))'
+    return A
+end

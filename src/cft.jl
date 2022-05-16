@@ -184,8 +184,8 @@ function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabili
     x1 = vcat(x, xx1); perm1 = sortperm(x1); x1 = sort(x1); 
     x2 = vcat(x, xx2); perm2 = sortperm(x2); x2 = sort(x2); 
 
-    if isfile("uS/uS-base.txt")
-        tmp = readdlm("uS/uS-base.txt")
+    if isfile("uS-lmbda-$λ-mu-$μ-eta-$η/uS-base.txt")
+        tmp = readdlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-base.txt")
         ywT0[1] = tmp[1,:]; yU_1[1] = tmp[2,:];
     else
         for y in xx1
@@ -225,10 +225,10 @@ function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabili
     ywT1[1] = ywT1[1][perm2]
     yU0[1] = yU0[1][perm2]
 
-    if ~isfile("uS/uS-base.txt")
-        writedlm("uS/uS-base.txt", [real.(ywT0[1]), real.(yU_1[1])])
+    if ~isfile("uS-lmbda-$λ-mu-$μ-eta-$η/uS-base.txt")
+        writedlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-base.txt", [real.(ywT0[1]), real.(yU_1[1])])
     end
-    writedlm("uS/uS-N-$N.txt", [x1, x2, real.(ywT0[1]), real.(yU_1[1]), real.(ywT1[1]), real.(yU0[1])])
+    writedlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-N-$N.txt", [x1, x2, real.(ywT0[1]), real.(yU_1[1]), real.(ywT1[1]), real.(yU0[1])])
 
     return (x1, x2, ywT0, yU_1, ywT1, yU0)
 end

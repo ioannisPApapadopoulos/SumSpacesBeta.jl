@@ -111,8 +111,8 @@ for N in [13,15,21,25,31,41] #3,5,7,11,
 end
 # d = fa(xx).-eSd[xx,1:length(fc)]*fc; d[isnan.(d)].=0.; norm(d, Inf)
 
-# findmax(abs.(ua(xx).-ASp[xx,1:length(u)]*u))[2]
-# xx[findmax(abs.(ua(xx).-ASp[xx,1:length(u)]*u))[2]]
+findmax(abs.(ua(xx).-ASp[xx,1:length(u)]*u))[2]
+xx[findmax(abs.(ua(xx).-ASp[xx,1:length(u)]*u))[2]]
 
 # xx = Array(-5.:0.01:5); xx = [xx[1:length(xx)÷2]' xx[length(xx)÷2+2:end]']'
 # yy = ASp[xx,1:length(u)]*u
@@ -133,12 +133,12 @@ end
 
 # savefig(p,"solution-error-plot.png")
 
-# p = plot(xx, 
-#     abs.(fa(xx) .- eSp[xx,1:length(f)]*f),
-#     ylabel="Error",
-#     xlabel="x",
-#     title="Error plot of right-hand side",
-#     legend=false)
+p = plot(xx, 
+    abs.(fa(xx) .- eSp[xx,1:length(f)]*f),
+    ylabel="Error",
+    xlabel="x",
+    title="Error plot of right-hand side",
+    legend=false)
 
 # savefig(p,"rhs-error-plot.png")
 

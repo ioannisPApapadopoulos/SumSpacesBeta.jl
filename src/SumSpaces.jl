@@ -23,7 +23,7 @@ export solvesvd, collocation_points, riemann, evaluate, framematrix, dualframema
             supporter_functions, interpolate_supporter_functions, coefficient_supporter_functions, inverse_fourier_transform, fractional_heat_fourier_solve, fft_supporter_functions,
             affinetransform, sqrt_laplace_wT0, sqrt_laplace_U_1, mathematica_correction,parse_mathematica,
             ExtendedChebyshev, ExtendedChebyshevT, ExtendedChebyshevU, extendedchebyshevt, ExtendedWeightedChebyshevT, ExtendedWeightedChebyshevU,
-            SumSpace, SumSpaceP, SumSpaceD, AppendedSumSpace, ElementSumSpace, ElementAppendedSumSpace,
+            SumSpace, SumSpaceP, SumSpaceD, AppendedSumSpace, ElementSumSpace, ElementAppendedSumSpace, jacobimatrix,
             Block, Derivative, Fill, BlockArray,
             coefficient_interlace, coefficient_stack, Id_Sp_Sd
             

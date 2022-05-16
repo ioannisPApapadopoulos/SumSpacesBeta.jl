@@ -4,14 +4,16 @@ using SpecialFunctions, HypergeometricFunctions
 using LinearAlgebra
 using MathLink
 using DelimitedFiles
+using LaTeXStrings
+
 
 errors = []
 # append!(errors, [[1e-5,31]])
 # writedlm("errors-inf.txt",errors)
 
-# for N in [3,5,7,11,13,15,21,25,31,41] #,
-for N in [31]
-# N = 31  # Truncation degree
+for N in [3,5,7,11,13,15,21,25,31,41] #, ,31
+# for N in [41]
+# N = 41  # Truncation degree
     λ = 1; μ = 1; η = 1# Constants
 
     a = [-5,-3,-1.,1,3,5]
@@ -25,16 +27,15 @@ for N in [31]
 
     fa = x -> ((λ .- 2η.*x) .* exp.(-x.^2) 
                 .+ 2/gamma(1/2) * _₁F₁.(1,1/2,-x.^2)
-                .+ μ * exp.(-x.^2) * abs.(x) .* erfi.(abs.(x)) ./ x
+                .+ μ * exp.(-x.^2) .* abs.(x) .* erfi.(abs.(x)) ./ x
     )
 
-    M = max(N^2,5001)  # Number of collocation points in [-1,1]
-    Me = M ÷ 10  # Number of collocation points in [-2,-1) and (1,2].
+    M = max(N^2,6001)  # Number of collocation points in [-1,1]
+    Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
     x = collocation_points(M, Me, a=a, endpoints=[-25,25]) # Collocation points
-    A = framematrix(x, eSp, N) 
-    f = A[1:end,1:end] \ riemann(x, fa)
-    uc = A[1:end,1:end] \ riemann(x, ua)
-
+    A = framematrix(x, eSp, N,norm="evaluate") 
+    f = A[1:end,1:end] \ evaluate(x, fa)
+    uc = A[1:end,1:end] \ evaluate(x, ua)
 
     # xx = -25:0.01:25
     # plot(xx,ua(xx))
@@ -44,19 +45,19 @@ for N in [31]
 
 
     # Compute support functions
-    supp = readdlm("uS-saved/uS-N-$N.txt")
+    supp = readdlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-N-$N.txt")
     x1 = []; x2 = [];
     ywT0 = []; yU_1 = []; ywT1 = []; yU0 = []
     append!(ywT0, [supp[3,:]]); append!(yU_1, [supp[4,:]]); append!(ywT1, [supp[5,1:2000210]]); append!(yU0, [supp[6,1:2000210]]); 
     x1 = supp[1,:]; x2 = supp[2,1:2000210];
-    uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e4, δ=1e-2, stabilise=true, correction=true,x1=x1,x2=x2,ywT0=ywT0,yU_1=yU_1,ywT1=ywT1,yU0=yU0) # Actual functions
+    uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e4, δ=1e-2, stabilise=true, correction=true,x1=x1,x2=x2,ywT0=ywT0,yU_1=yU_1,ywT1=ywT1,yU0=yU0); # Actual functions
     # Element primal sum space coefficients
     cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
 
 
     # Plot sanity check
     xx = -10:0.001:10
-    plot(xx, uS[2][3](xx))
+    plot(xx, uS[4][3](xx))
     y = eSp[xx,1:length(cuS[1][1])]*cuS[4][3]
     plot!(xx, y)
 
@@ -72,7 +73,7 @@ for N in [31]
     Bm = (eSd\eSp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
 
 
-    Dm =  [λ.*Bm + μ.*Bm*Hm + Cm[j]*Hm for j in 1:K]     # Helmholtz-like operator: Sp -> Sd   
+    Dm =  [λ.*Bm + μ.*Bm*Hm + η.*Cm[j] + Cm[j]*Hm for j in 1:K]     # Helmholtz-like operator: Sp -> Sd   
     Dm = [hcat(zeros(size(Dm[j],1), 4),Dm[j]) for j in 1:K] # Adding 4 columns to construct: ASp -> Sd
     for j in 1:K
         Dm[j][2:3,1:2] = I[1:2,1:2]; Dm[j][end-1:end,3:4] = I[1:2,1:2]
@@ -108,6 +109,7 @@ for N in [31]
     # Rearrange coefficients back to interlaced
     u = coefficient_interlace(u, N, K, appended=true)
     fc = coefficient_interlace(fc, N, K, appended=true)
+    fd = coefficient_interlace(fd[1:end],N, K, appended=true)
     # u[1] = u[1] - ASp[1e2,1:length(u)]'*u[1:end]
     # u[1] = - ASp[0,2:length(u)]'*u[2:end] +ua(0)
     # u[1] = 0
@@ -118,3 +120,34 @@ for N in [31]
     append!(errors,[[norm(ua(xx) .- ASp[xx,1:length(u)]*u, Inf),N]])
     writedlm("errors-full-inf.txt", errors)
 end
+
+xx = Array(-5.:0.01:5)
+yy = ASp[xx,1:length(u)]*u
+
+# append!(errors, norm(dx(xx), Inf))
+p = plot(xx,yy, title="Sheng2020", label="Sum space - 5 elements", legend=:topleft)
+p = plot!(xx, ua(xx), linewidth=4, ylabel=L"$u(x)$", xlabel=L"$x$", title="Solution", ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,legend=false)
+p = plot(xx,eSd[xx,1:length(fd)]*fd, title="Right-hand side", label="RHS", legend=false)
+p = plot(xx, fa(xx), linewidth=4, ylabel=L"$y$", xlabel=L"$x$", title="Example", ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,legend=:topleft, label="Right-hand side")
+p = plot!(xx, ua(xx), linewidth=4, ylabel=L"$y$", xlabel=L"$x$", title="Example", ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,legend=:topleft, label="Solution")
+savefig(p, "example.pdf")
+display(p)
+
+p = plot(xx, 
+    abs.(ua(xx) .- ASp[xx,1:length(u)]*u), 
+    # yaxis=:log,
+    ylabel="Error",
+    xlabel="x",
+    title="Error plot of solution",
+    legend=false)
+
+findmax(abs.(ua(xx).-ASp[xx,1:length(u)]*u))[2]
+xx[findmax(abs.(ua(xx).-ASp[xx,1:length(u)]*u))[2]]
+
+
+p = plot(xx, 
+    abs.(fa(xx) .- eSp[xx,1:length(f)]*f),
+    ylabel="Error",
+    xlabel="x",
+    title="Error plot of right-hand side",
+    legend=false)
