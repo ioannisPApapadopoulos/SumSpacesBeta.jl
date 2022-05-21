@@ -85,7 +85,7 @@ function expansion_sum_space(c, N, el_no)
 end
 
 # Construct Least Squares matrix for sum space
-function framematrix(x, Sp, Nn; norm="riemann")
+function framematrix(x, Sp, Nn; normtype="riemann")
     Tp = eltype(Sp)
     el = length(Sp.I) - 1
     if typeof(Sp) == SumSpace{1, Vector{Tp}, Tp}
@@ -101,18 +101,18 @@ function framematrix(x, Sp, Nn; norm="riemann")
     A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
     
     # Form columns of Least Squares matrix.
-    if norm == "riemann"
-        A[:,Block.(1:length(cols))] = riemann(x, x->Sp[x, Block.(1:length(cols))])
-    elseif norm == "evaluate"
-        A[:,Block.(1:length(cols))] = evaluate(x, x->Sp[x, Block.(1:length(cols))])
-    else
-        error("Please use either riemann or evaluate as norm optionns.")
+    if normtype=="riemann"
+        linear_op = (x,y) -> riemann(x,y)
+    elseif normtype=="evaluate"
+        linear_op = (x,y) -> evaluate(x,y)
     end
+    A[:,Block.(1:length(cols))] = linear_op(x, x->Sp[x, Block.(1:length(cols))])
+
     return A
 end
 
 # Construct Least Squares matrix for dual sum space
-function dualframematrix(x, Sd, Nn)
+function dualframematrix(x, Sd, Nn; normtype="riemann")
     Tp = eltype(Sd)
     el = length(Sd.I) - 1
     if typeof(Sd) == SumSpace{2, Vector{Tp}, Tp}
@@ -127,6 +127,11 @@ function dualframematrix(x, Sd, Nn)
     A = BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (sum(rows),sum(cols)))
     
     # Form columns of Least Squares matrix.
-    A[:,Block.(1:length(cols))] = riemann(x, x->Sd[x, Block.(1:length(cols))])
+    if normtype=="riemann"
+        linear_op = (x,y) -> riemann(x,y)
+    elseif normtype=="evaluate"
+        linear_op = (x,y) -> evaluate(x,y)
+    end
+    A[:,Block.(1:length(cols))] = linear_op(x, x->Sd[x, Block.(1:length(cols))])
     return A
 end

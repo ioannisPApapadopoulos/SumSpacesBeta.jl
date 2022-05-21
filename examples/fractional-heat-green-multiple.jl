@@ -22,14 +22,14 @@ M = max(N^2,5001)  # Number of collocation points in [-1,1]
 Me = M ÷ 10 + 1  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me, a=a, endpoints=[-20.,20]) # Collocation points
 
-Nn = min(N,5) # Truncation degree to approximate the supporter functions
+Nn = N#min(N,5) # Truncation degree to approximate the supporter functions
 
-A = framematrix(x, eSp, Nn) # Blocked frame matrix
+A = framematrix(x, eSp, Nn, normtype="riemann") # Blocked frame matrix
 
 # Compute support functions
-# uS = fft_supporter_functions(λ, μ, η, a=a) # Actual functions
+# uS = fft_supporter_functions(λ, μ, η, a=a, W=1e4,δ=1e-2,correction=true) # Actual functions
 # Element primal sum space coefficients
-cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
+cuS = coefficient_supporter_functions(A, x, uS, 2N+3, normtype="riemann") 
 
 # Plot sanity check
 xx = -10:0.01:10
@@ -70,11 +70,12 @@ end
 # u = [u₀]
 
 u0 = x -> 1. ./ ((x.^2 .+ 1) )
-u₀ = zeros(2*N+7)
-u₀[6] = 1.
+# u₀ = zeros(2*N+7)
+# u₀[6] = 1.
 x = collocation_points(M, Me, a=a, endpoints=[-20.,20])
-A = framematrix(x, eSp, N, norm="riemann")
-u₀ = solvesvd(A, riemann(x, u0))#, tol=1e-3)
+A = framematrix(x, eSp, N, normtype="riemann")
+u₀ =  A[1:end,1:end] \ riemann(x, u0) 
+# u₀ = solvesvd(A, riemann(x, u0))#, tol=1e-3)
 u₀₀= zeros(1+el_no*(2N+6)); u₀₀[1]=u₀[1]; u₀₀[2+4*el_no:4*el_no+length(u₀)]=u₀[2:end]
 u = [u₀₀]
 
@@ -101,7 +102,7 @@ for k = 1:timesteps
     
      # Rearrange coefficients back to interlaced
     u1 = coefficient_interlace(u1, N, el_no, appended=true)
-    u1[1] = u1[1] - ASp[2e2,1:length(u1)]'*u1
+    # u1[1] = u1[1] - ASp[2e2,1:length(u1)]'*u1
 
     # if mod(k,5) == 0
     #     y = x->ASp[x,1:length(u1)]*u1
@@ -115,7 +116,7 @@ for k = 1:timesteps
 
     # Normalise constant so that it decays to zero
     u[k+1][1] = u[k+1][1] - ASp[2e2,1:length(u[k+1])]'*u[k+1]
-
+    # u[k+1][1] = 0.
 end
 
 
@@ -138,20 +139,20 @@ for k = 1:timesteps+1
     # append!(errors, sqrt(quadgk(dx, -5, 5)[1]))
     append!(errors, norm(dx(xx), Inf))
 
-    p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
-    p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
+    # p = plot(xx,yy, title="time=$tdisplay (s)", label="Sum space - 3 elements", legend=:topleft, xlim=xlim, ylim=ylim)
+    # p = plot!(xx, y(xx, t), label="True solution", legend=:topleft, xlim=xlim, ylim=ylim)
     # sleep(0.001)
-    display(p)
+    # display(p)
 end
 # gif(anim, "anim_fps10.gif", fps = 10)
 
-# plot(1:length(errors), errors, legend=:none, 
-#     title=L"\mathrm{Error \ norm}",
-#     markers=:circle,
-#     xlabel=L"$k$",
-#     xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
-#     ylabel=L"$\Vert u(x,k\Delta t)-\mathbf{S}^{\mathbf{I},\!\!\!\!+}_5\!\!\!\!\!(x) \mathbf{u}_k)\Vert_\infty$")
-# savefig("errors-infty.pdf")
+plot(1:length(errors), errors, legend=:none, 
+    title="Error",
+    markers=:circle,
+    xlabel=L"$k$",
+    xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
+    ylabel=L"$\Vert u(x,k\Delta t)-\mathbf{S}^{\mathbf{I},\!\!\!\!+}_5\!\!\!\!\!(x) \mathbf{u}_k)\Vert_\infty$")
+savefig("errors-infty.pdf")
  
 # xx = -10:0.01:10
 # xlim = [xx[1],xx[end]]; ylim = [-0.02,1]

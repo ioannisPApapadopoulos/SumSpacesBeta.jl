@@ -156,6 +156,7 @@ function *(H::Hilbert{<:Any,<:Any,<:Any}, Sp::ElementSumSpace{1})
     dat = BlockVcat(Fill(0,3)', dat)
     A = _BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (0,0), (1,1))
     return ApplyQuasiMatrix(*, ElementSumSpace{1,T}(Sp.I), A)
+    # return A
 end
 
 # Derivative Sp -> Sd
@@ -175,6 +176,7 @@ function *(D::Derivative{<:Real}, Sp::ElementSumSpace{1})
         append!(A, [_BandedBlockBandedMatrix(dat', (axes(dat,1),axes(dat,1)), (1,0), (0,0))])
     end
     return [ApplyQuasiMatrix(*, ElementSumSpace{2,T}(Sp.I), A[j]) for j in 1:el_no]
+    # return A
 end
 
 # Identity ASp -> Sd

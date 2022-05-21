@@ -126,13 +126,21 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5,
     return uS
 end
 
-function coefficient_supporter_functions(A, x, uS, N; tol=1e-6)
+function coefficient_supporter_functions(A, x, uS, N; tol=1e-6, normtype="riemann")
+    if normtype=="riemann"
+        frame_op = (x, y) -> riemann(x,y)
+    elseif normtype=="evaluate"
+        frame_op = (x, y) -> evaluate(x,y)
+    else
+        error("Please pick either riemann or evaluate.")
+    end
+    
     (ywT0, yU_1, ywT1, yU0) = uS
     el_no = length(yU0)
-    yu_1 = [solvesvd(A, riemann(x, yU_1[j]); tol=tol) for j in 1:el_no]
-    yu0 = [solvesvd(A, riemann(x, yU0[j]); tol=tol) for j in 1:el_no]
-    ywt0 = [solvesvd(A, riemann(x, ywT0[j]); tol=tol) for j in 1:el_no]
-    ywt1 = [solvesvd(A, riemann(x, ywT1[j]); tol=tol) for j in 1:el_no]
+    yu_1 = [solvesvd(A, frame_op(x, yU_1[j]); tol=tol) for j in 1:el_no]
+    yu0 = [solvesvd(A, frame_op(x, yU0[j]); tol=tol) for j in 1:el_no]
+    ywt0 = [solvesvd(A, frame_op(x, ywT0[j]); tol=tol) for j in 1:el_no]
+    ywt1 = [solvesvd(A, frame_op(x, ywT1[j]); tol=tol) for j in 1:el_no]
     yu_1 = [expansion_sum_space(yu_1[j],  N, el_no) for j in 1:el_no]
     yu0 = [expansion_sum_space(yu0[j], N, el_no) for j in 1:el_no]
     ywt0 = [expansion_sum_space(ywt0[j], N, el_no) for j in 1:el_no]
@@ -184,18 +192,22 @@ function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabili
     x1 = vcat(x, xx1); perm1 = sortperm(x1); x1 = sort(x1); 
     x2 = vcat(x, xx2); perm2 = sortperm(x2); x2 = sort(x2); 
 
+    if ~isdir("uS-lmbda-$λ-mu-$μ-eta-$η")
+        mkdir("uS-lmbda-$λ-mu-$μ-eta-$η")
+    end
+
     if isfile("uS-lmbda-$λ-mu-$μ-eta-$η/uS-base.txt")
         tmp = readdlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-base.txt")
         ywT0[1] = tmp[1,:]; yU_1[1] = tmp[2,:];
     else
         for y in xx1
             print(y)
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[Pi * BesselJ[0,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[Pi * BesselJ[0,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
             a1 = parse_mathematica(a1)
 
             ywT0 = [vcat(ywT0[1],[a1])]
     
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[I*Pi*k*BesselJ[0,Abs[k]]/Abs[k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[I*Pi*k*BesselJ[0,Abs[k]]/Abs[k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
             a1 = parse_mathematica(a1)
             yU_1 = [vcat(yU_1[1],[a1])]
         end
@@ -206,17 +218,17 @@ function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabili
     for y in xx2
         print(y)
         if stabilise==true
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,N=N,y=y)
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,N=N,y=y)
         else
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
         end
         a1 = parse_mathematica(a1)
         ywT1 = [vcat(ywT1[1],[a1])]
         
         if stabilise==true
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,N=N,y=y)
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞},  WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,N=N,y=y)
         else
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞}, MaxRecursion -> 100, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
         end
         a1 = parse_mathematica(a1)
         yU0 = [vcat(yU0[1],[a1])]
@@ -228,7 +240,10 @@ function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabili
     if ~isfile("uS-lmbda-$λ-mu-$μ-eta-$η/uS-base.txt")
         writedlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-base.txt", [real.(ywT0[1]), real.(yU_1[1])])
     end
-    writedlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-N-$N.txt", [x1, x2, real.(ywT0[1]), real.(yU_1[1]), real.(ywT1[1]), real.(yU0[1])])
-
+    if stabilise==true
+        writedlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-N-$N.txt", [x1, x2, real.(ywT0[1]), real.(yU_1[1]), real.(ywT1[1]), real.(yU0[1])])
+    else
+        writedlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-N-1.txt", [x1, x2, real.(ywT0[1]), real.(yU_1[1]), real.(ywT1[1]), real.(yU0[1])])
+    end
     return (x1, x2, ywT0, yU_1, ywT1, yU0)
 end

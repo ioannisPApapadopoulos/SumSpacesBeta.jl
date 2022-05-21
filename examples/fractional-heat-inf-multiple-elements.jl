@@ -2,7 +2,8 @@ using Revise
 using SumSpaces, Plots
 using QuadGK
 import LinearAlgebra: I, norm
-using LaTeXStrings
+using LaTeXStrings, DelimitedFiles
+using PyPlots
 
 """
 Solve the fractional heat equation with 3 elements at [-3,-1] ∪ [-1,1] ∪ [1,3].
@@ -27,7 +28,14 @@ Nn = N#min(N,7) # Truncation degree to approximate the supporter functions
 A = framematrix(x, eSp, Nn) # Blocked frame matrix
 
 # Compute support functions
-@time uS = fft_supporter_functions(λ, μ, η, a=a); # Actual functions
+# @time uS = fft_supporter_functions(λ, μ, η, a=a); # Actual functions
+supp = readdlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-N-1.txt")
+x1 = []; x2 = [];
+ywT0 = []; yU_1 = []; ywT1 = []; yU0 = []
+append!(ywT0, [supp[3,:]]); append!(yU_1, [supp[4,:]]); append!(ywT1, [supp[5,1:2000210]]); append!(yU0, [supp[6,1:2000210]]); 
+x1 = supp[1,:]; x2 = supp[2,1:2000210];
+uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e4, δ=1e-2, correction=true,x1=x1,x2=x2,ywT0=ywT0,yU_1=yU_1,ywT1=ywT1,yU0=yU0); # Actual functions
+
 # Element primal sum space coefficients
 @time cuS = coefficient_supporter_functions(A, x, uS, 2N+3); 
 
@@ -101,7 +109,7 @@ timesteps=100
     
      # Rearrange coefficients back to interlaced
     u1 = coefficient_interlace(u1, N, el_no, appended=true)
-    u1[1] = u1[1] - ASp[2e2,1:length(u1)]'*u1
+    # u1[1] = u1[1] - ASp[2e2,1:length(u1)]'*u1
 
     # if mod(k,5) == 0
     #     y = x->ASp[x,1:length(u1)]*u1
@@ -148,7 +156,7 @@ end
 
 # plot(2:length(errors)+1, errors5)
 p = plot(2:length(errors)+1, errors, legend=:none, 
-    title=L"\mathrm{Error \ norm}",
+    title="Error",
     # yaxis=:log,
     markers=:circle,
     xlabel=L"$k$",
@@ -188,3 +196,13 @@ savefig(p, "errors-infty-W0.pdf")
 #         xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
 #         title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_k}, k \geq 2 \; (N=11)$")
 # savefig(p, "spy-2.pdf")
+
+uaa(x,t) = ASp[x,1:length(u[1])]'*u[Int64(round(t/Δt))][1:end] 
+x = -3:0.01:3; t = 0.01:0.01:1.01;
+X = repeat(reshape(x, 1, :), length(t), 1)
+T = repeat(t, 1, length(x))
+Z = map(uaa, X, T)
+p = contour(x,t,Z,fill=true, rev=true,
+        xlabel=L"$x$",ylabel=L"$t$",
+        xtickfontsize=8, ytickfontsize=8,xlabelfontsize=15,ylabelfontsize=15)
+savefig(p, "W0-frac-heat-contour.pdf")

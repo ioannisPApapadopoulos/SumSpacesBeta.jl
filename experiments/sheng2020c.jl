@@ -12,8 +12,8 @@ errors = []
 # writedlm("errors-inf.txt",errors)
 
 # for N in [3,5,7,11,13,15,21,25,31,41] #, ,31
-# for N in [41]
-N = 41  # Truncation degree
+# for N in [31]
+N = 31  # Truncation degree
     λ = 1; μ = 1; η = 1# Constants
 
     a = [-5,-3,-1.,1,3,5]
@@ -25,16 +25,10 @@ N = 41  # Truncation degree
 
     ua = x ->  exp.(-x.^2)
 
-    # fa = x -> ((λ .- 2η.*x) .* exp.(-x.^2) 
-    #             .+ 2/gamma(1/2) * _₁F₁.(1,1/2,-x.^2)
-    #             .+ μ * exp.(-x.^2) .* abs.(x) .* erfi.(abs.(x)) ./ x
-    # )
-
-    fa = z -> [x==0 ? 2.128379167095513 : ((λ .- 2η.*x) .* exp.(-x.^2) 
-    .+ 2/gamma(1/2) * _₁F₁.(1,1/2,-x.^2)
-    .+ μ * exp.(-x.^2) .* abs.(x) .* erfi.(abs.(x)) ./ x
-    ) for x in z]
-
+    fa = x -> ((λ .+ x .- 2η.*x) .* exp.(-x.^2) 
+                .+ 2/gamma(1/2) * _₁F₁.(1,1/2,-x.^2)
+                .+ μ * exp.(-x.^2) .* abs.(x) .* erfi.(abs.(x)) ./ x
+    )
 
     M = max(N^2,6001)  # Number of collocation points in [-1,1]
     Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
@@ -58,13 +52,13 @@ N = 41  # Truncation degree
     x1 = supp[1,:]; x2 = supp[2,1:2000210];
     uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e4, δ=1e-2, stabilise=true, correction=true,x1=x1,x2=x2,ywT0=ywT0,yU_1=yU_1,ywT1=ywT1,yU0=yU0); # Actual functions
     # Element primal sum space coefficients
-    cuS = coefficient_supporter_functions(A, x, uS, 2N+3, normtype="evaluate") 
+    cuS = coefficient_supporter_functions(A, x, uS, 2N+3) 
 
 
     # Plot sanity check
     xx = -10:0.001:10
-    plot(xx, uS[4][3](xx))
-    y = eSp[xx,1:length(cuS[1][1])]*cuS[4][3]
+    plot(xx, uS[2][3](xx))
+    y = eSp[xx,1:length(cuS[1][1])]*cuS[2][3]
     plot!(xx, y)
 
     # Create appended sum space
@@ -77,9 +71,9 @@ N = 41  # Truncation degree
     Hm = (1/π).*((eSp\(H*eSp))[1:2N+3,1:2N+3])    # Hilbert: Sp -> Sp
     Cm = [(eSd\(Derivative(x)*eSp)[j])[1:2N+7,1:2N+3] for j in 1:K]# Derivative: Sp -> Sd
     Bm = (eSd\eSp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
+    Jm = [(jacobimatrix(eSp)[j])[1:2N+3,1:2N+3] for j in 1:K]
 
-
-    Dm =  [λ.*Bm + μ.*Bm*Hm + η.*Cm[j] + Cm[j]*Hm for j in 1:K]     # Helmholtz-like operator: Sp -> Sd   
+    Dm =  [Bm*Jm[j] + λ.*Bm + μ.*Bm*Hm + η.*Cm[j] + Cm[j]*Hm for j in 1:K]     # Helmholtz-like operator: Sp -> Sd   
     Dm = [hcat(zeros(size(Dm[j],1), 4),Dm[j]) for j in 1:K] # Adding 4 columns to construct: ASp -> Sd
     for j in 1:K
         Dm[j][2:3,1:2] = I[1:2,1:2]; Dm[j][end-1:end,3:4] = I[1:2,1:2]
@@ -124,7 +118,7 @@ N = 41  # Truncation degree
     xx = Array(-5.:0.01:5); #xx = [xx[1:length(xx)÷2]' xx[length(xx)÷2+2:end]']'
     # ylim = [0.,1.]
     append!(errors,[[norm(ua(xx) .- ASp[xx,1:length(u)]*u, Inf),N]])
-    writedlm("errors-full-inf.txt", errors)
+    writedlm("errors-x-inf.txt", errors)
 # end
 
 xx = Array(-5.:0.01:5)
@@ -157,13 +151,3 @@ p = plot(xx,
     xlabel="x",
     title="Error plot of right-hand side",
     legend=false)
-
-
-p = plot(spy(Dm[1], markersize=2,color=:darktest), 
-        xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
-        title= L"$\mathrm{Spy \ plot \ of} \ L^{I_1} \; (n=41)$")
-savefig(p, "spy-sheng-1.pdf")
-p = plot(spy(Dm[2], markersize=2,color=:darktest), 
-        xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
-        title= L"$\mathrm{Spy \ plot \ of} \ L^{I_k}, k \geq 2 \; (n=41)$")
-savefig(p, "spy-sheng-2.pdf")
