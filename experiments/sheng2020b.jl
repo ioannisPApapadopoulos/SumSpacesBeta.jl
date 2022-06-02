@@ -11,9 +11,9 @@ errors = []
 # append!(errors, [[1e-5,31]])
 # writedlm("errors-inf.txt",errors)
 
-# for N in [3,5,7,11,13,15,21,25,31,41] #, ,31
+for N in [3,5,7,11,13,15,21,25,31,41] #, ,31
 # for N in [41]
-N = 41  # Truncation degree
+# N = 41  # Truncation degree
     λ = 1; μ = 1; η = 1# Constants
 
     a = [-5,-3,-1.,1,3,5]
@@ -62,7 +62,7 @@ N = 41  # Truncation degree
 
 
     # Plot sanity check
-    xx = -10:0.001:10
+    xx = -10:0.00001:10
     plot(xx, uS[4][3](xx))
     y = eSp[xx,1:length(cuS[1][1])]*cuS[4][3]
     plot!(xx, y)
@@ -125,7 +125,7 @@ N = 41  # Truncation degree
     # ylim = [0.,1.]
     append!(errors,[[norm(ua(xx) .- ASp[xx,1:length(u)]*u, Inf),N]])
     writedlm("errors-full-inf.txt", errors)
-# end
+end
 
 xx = Array(-5.:0.01:5)
 yy = ASp[xx,1:length(u)]*u

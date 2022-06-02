@@ -78,4 +78,4 @@ fxλ = (x, λ) -> (sqrt(π)*exp(λ/4)).*ExtendedWeightedChebyshevU()[x,5]
             label="Sum space - 5 elements", 
             legend=:topleft)
 
-# end
+# end  

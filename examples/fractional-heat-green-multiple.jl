@@ -180,9 +180,9 @@ savefig("errors-infty.pdf")
 
 # p = plot(spy(Dm[1], markersize=4,color=:darktest), 
 #         xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
-#         title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_1} \; (N=11)$")
+#         title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_1} \; (n=5)$")
 # savefig(p, "spy-1.pdf")
 # p = plot(spy(Dm[2], markersize=4,color=:darktest), 
 #         xtickfontsize=12, ytickfontsize=12,xlabelfontsize=15,ylabelfontsize=15,
-#         title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_k}, k \geq 2 \; (N=11)$")
+#         title= L"$\mathrm{Spy \ plot \ of} \ \lambda E + A^{I_k}, k \geq 2 \; (n=5)$")
 # savefig(p, "spy-2.pdf")

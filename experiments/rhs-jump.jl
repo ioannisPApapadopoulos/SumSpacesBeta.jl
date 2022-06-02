@@ -3,41 +3,56 @@ using SumSpaces
 using LaTeXStrings, Plots
 using DelimitedFiles
 using LinearAlgebra
+using QuadGK
+using DelimitedFiles
 
 N = 61;
 
-# fa = x -> [abs(y) < 1 ? 1 : (abs(y)==1 ? 1/2 : 0) for y in x]
-fa = x -> [abs(y) < 1 ? 1 : 0 for y in x]
+fa = x -> [abs(y) < 1 ? 1 : (abs(y)==1 ? 1/2 : 0) for y in x]
+# fa = x -> [abs(y) < 1 ? 1 : 0 for y in x]
+
+function riemann_2_norm(diff, h)
+    diff2 = diff.^2
+    out = 0.5*h^2*(diff2[1]+diff2[end])+h^2 .* sum(diff2[2:end-1])
+    return sqrt(out)
+end
+
 
 a = [-5,-3,-1.,1,3,5]; eSp = ElementSumSpace{1}(a); eSd = ElementSumSpace{2}(a);
 
 M = max(N^2,6001)  # Number of collocation points in [-1,1]
 Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
-x = collocation_points(M, Me, a=a, endpoints=[-10,10],innergap=1e-2) # Collocation points
+x = collocation_points(M, Me, a=a, endpoints=[-10,10]) # Collocation points
 A = framematrix(x, eSp, N, normtype="evaluate") 
 f = A[1:end,1:end] \ evaluate(x, fa)
 
-xx = -5:0.011:5;
+xx = -5:0.00001:5;
 plot(xx, fa(xx))
 ff = eSp[xx,1:length(f)]*f;
 plot!(xx, ff)
-norm(abs.(fa(xx).-ff), Inf)
-wf = findmax(abs.(fa(xx).-eSp[xx,1:length(f)]*f))[2]
+diff = abs.(fa(xx).-ff); 
+# diff[findall(x->x==1, xx)[1]] = 0.; diff[findall(x->x==-1, xx)[1]]= 0.;
+norm(diff, Inf)
+riemann_2_norm(diff, step(xx))
+wf = findmax(diff)[2]
 # abs.(fa(xx).-eSp[xx,1:length(f)]*f)[401]
 xx[wf]
 
 
-xdual = collocation_points(M, Me, a=a, endpoints=[-10,10], innergap=1e-2)
+xdual = collocation_points(M, Me, a=a, endpoints=[-10,10], innergap=1e-4)
 Adual = dualframematrix(xdual, eSd, N, normtype="evaluate")
 fdual = Adual[1:end,1:end] \ evaluate(xdual, fa)
 plot(xx, fa(xx))
-ff = eSd[xx,1:length(fdual)]*fdual; ff[isnan.(ff)] .= 0;
-plot!(xx,ff)
+ffd = eSd[xx,1:length(fdual)]*fdual
+# ff[isnan.(ff)] .= 0;
+plot!(xx,ffd)
+diff = abs.(fa(xx).-ffd); diff[isnan.(ffd)] .= 0;
 # ff[401]=0.5; ff[601]=0.5;
-norm(abs.(fa(xx).-ff), Inf)
-findmax(abs.(fa(xx).-ff))[2]
+norm(diff, Inf)
+riemann_2_norm(diff, step(xx))
+findmax(abs.(fa(xx).-ffd))[2]
 # abs.(fa(xx).-eSp[xx,1:length(f)]*f)[401]
-xx[findmax(abs.(fa(xx).-ff))[2]]
+xx[findmax(abs.(fa(xx).-ffd))[2]]
 
 
 p = plot(xx, 
@@ -58,7 +73,7 @@ savefig(p,"discontinous-rhs1.pdf")
 
 
 p = plot(xx, 
-    abs.(fa(xx) .- eSp[xx,1:length(f)]*f),
+    diff,
     ylabel="Error",
     xlabel="x",
     title="Error plot of right-hand side",
@@ -66,37 +81,82 @@ p = plot(xx,
 
 ### Collect errors
 
-errors = []; xx = -5:0.01:5;
 Nn = [3,5,7,11,15,21,31,41,51,61,71,81,91,101]
-# for N in Nn
 
-#     M = max(N^2,6001)  # Number of collocation points in [-1,1]
-#     Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
-#     x = collocation_points(M, Me, a=a, endpoints=[-10,10]) # Collocation points
-#     A = framematrix(x, eSp, N, normtype="evaluate") 
-#     f = A[1:end,1:end] \ evaluate(x, fa)
-#     append!(errors,norm(fa(xx).-eSp[xx,1:length(f)]*f, Inf)) 
-# end
+errors1 = []; errors2 = [];
+xx1 = -5:0.01:5; xx2 = -5:0.0001:5
 for N in Nn
 
     M = max(N^2,6001)  # Number of collocation points in [-1,1]
     Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
-    x = collocation_points(M, Me, a=a, endpoints=[-10,10],innergap=1e-10) # Collocation points
+    x = collocation_points(M, Me, a=a, endpoints=[-10,10]) # Collocation points
     A = framematrix(x, eSp, N, normtype="evaluate") 
     f = A[1:end,1:end] \ evaluate(x, fa)
-    append!(errors,norm(fa(xx).-eSp[xx,1:length(f)]*f, Inf)) 
+
+    ff1 = eSp[xx1,1:length(f)]*f; ff2 = eSp[xx2,1:length(f)]*f;
+    diff1 = abs.(fa(xx1).-ff1); diff2 = abs.(fa(xx2).-ff2); 
+    append!(errors1, riemann_2_norm(diff1, step(xx1))) 
+    append!(errors2, riemann_2_norm(diff2, step(xx2))) 
+    writedlm("errors-rhs-jump-primal-1e-2.txt", errors1)
+    writedlm("errors-rhs-jump-primal-1e-4.txt", errors2)
 end
-plot(Nn, log10.(errors), legend=:none, 
+
+fdiff = x -> abs.(fa(x)[1] - eSp[x,1:length(f)]'*f)
+quadgk(fdiff, -5, 5, rtol=1e-6)[1][1]
+
+errors3 = []; errors4 = [];
+for N in Nn
+
+    M = max(N^2,6001)  # Number of collocation points in [-1,1]
+    Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
+    xdual = collocation_points(M, Me, a=a, endpoints=[-10,10], innergap=1e-2)
+    Adual = dualframematrix(xdual, eSd, N, normtype="evaluate")
+    fdual = Adual[1:end,1:end] \ evaluate(xdual, fa)
+    ffd1 = eSd[xx1,1:length(fdual)]*fdual; ffd2 = eSd[xx2,1:length(fdual)]*fdual
+
+    diff1 = abs.(fa(xx1).-ffd1); diff2 = abs.(fa(xx2).-ffd2); 
+    diff1[isnan.(ffd1)] .= 0; diff2[isnan.(ffd2)] .= 0;
+    append!(errors3, riemann_2_norm(diff1, step(xx1))) 
+    append!(errors4, riemann_2_norm(diff2, step(xx2))) 
+    writedlm("errors-rhs-jump-dual-1e-2.txt", errors3)
+    writedlm("errors-rhs-jump-dual-1e-4.txt", errors4)
+end
+
+# for N in Nn
+
+#     M = max(N^2,6001)  # Number of collocation points in [-1,1]
+#     Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
+#     x = collocation_points(M, Me, a=a, endpoints=[-10,10],innergap=1e-10) # Collocation points
+#     A = framematrix(x, eSp, N, normtype="evaluate") 
+#     f = A[1:end,1:end] \ evaluate(x, fa)
+#     append!(errors,norm(fa(xx).-eSp[xx,1:length(f)]*f, Inf)) 
+# end
+
+errors1 = readdlm("rhs-jump/errors-rhs-jump-primal-1e-2.txt")
+errors2 = readdlm("rhs-jump/errors-rhs-jump-primal-1e-4.txt")
+errors3 = readdlm("rhs-jump/errors-rhs-jump-dual-1e-2.txt")
+errors4 = readdlm("rhs-jump/errors-rhs-jump-dual-1e-4.txt")
+
+plot(Nn, log10.(errors1),
     title="Error",
+    legend=:bottomleft,
     markers=:circle,
     xlabel=L"$n$",
-    ylabel=L"$\log_{10}(\infty\mathrm{-norm \;\; error})$",
+    ylabel=L"$\log_{10}(L^2\mathrm{-norm \;\; error})$",
     # ylim=[log10(1e-15),log10(1e-3)],
     xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,
     linewidth=2,
     marker=:dot,
-    markersize=5)
-savefig("errors-rhs-infty.pdf")
+    markersize=5,
+    label=L"Sum space $h=10^{-2}$")
+plot!(Nn, log10.(errors2), title="Error",markers=:circle,xlabel=L"$n$",ylabel=L"$\log_{10}(L^2\mathrm{-norm \;\; error})$",
+    xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,linewidth=2,marker=:dot,markersize=5,label=L"Sum space $h=10^{-4}$")
+plot!(Nn, log10.(errors3), title="Error",markers=:circle,xlabel=L"$n$",ylabel=L"$\log_{10}(L^2\mathrm{-norm \;\; error})$",
+    xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,linewidth=2,marker=:dot,markersize=5,label=L"Dual sum space $h=10^{-2}$")
+plot!(Nn, log10.(errors4), title="Error",markers=:circle,xlabel=L"$n$",ylabel=L"$\log_{10}(L^2\mathrm{-norm \;\; error})$",
+    xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,linewidth=2,marker=:dot,markersize=5,label=L"Dual sum space $h=10^{-4}$")
+
+savefig("errors-rhs-infty2.pdf")
 
 
 
@@ -169,6 +229,6 @@ xx = Array(-5.:0.01:5)
 yy = ASp[xx,1:length(u)]*u
 
 # append!(errors, norm(dx(xx), Inf))
-p = plot(xx, yy, ylabel=L"$y$", xlabel=L"$x$", title="Discontinuous data", ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,legend=:topleft, label="Solution")
+p = plot(xx, yy, ylabel=L"$y$", xlabel=L"$x$", title="Solution", ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,legend=:topleft, label="Solution")
 savefig(p, "example-rhs-jump.pdf")
 display(p)
