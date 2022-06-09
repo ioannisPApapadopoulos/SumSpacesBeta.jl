@@ -98,7 +98,7 @@ function interpolate_supporter_functions(x1, x2, s, ywT0, yU_1, ywT1, yU0; a=[-1
     return (ywT0, yU_1, ywT1, yU0)
 end
 
-function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false, correction=false, x1 = [], x2 = [], ywT0 =[], yU_1=[], ywT1=[], yU0=[])
+function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false, correction=false, oscillation=false, x1 = [], x2 = [], ywT0 =[], yU_1=[], ywT1=[], yU0=[])
     # Special case analytical expressions
     if λ == μ == η ≈ 0
         ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
@@ -122,6 +122,7 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5,
     else
         s = [1.0]
     end
+
     uS = interpolate_supporter_functions(x1, x2, s, ywT0, yU_1, ywT1, yU0, a=a)
     return uS
 end

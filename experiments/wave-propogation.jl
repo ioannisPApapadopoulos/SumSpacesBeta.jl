@@ -1,13 +1,14 @@
 using Revise
-using SumSpaces, LinearAlgebra
+using SumSpaces, LinearAlgebra, Interpolations
 using Plots
 
 N = 7;
 μ = 0; η = 0;
 fxλ = (x, λ) -> (sqrt(π)*exp(λ/4)).*ExtendedWeightedChebyshevU()[x,5]
-
+solns = []
 # for λ in [-1.0]
-λ = -1.
+# for λ in [-1,-10,-35]
+λ = -2e1
     a = [-5,-3,-1.,1,3,5]; K = length(a)-1
 
     eSp = ElementSumSpace{1}(a)
@@ -21,14 +22,49 @@ fxλ = (x, λ) -> (sqrt(π)*exp(λ/4)).*ExtendedWeightedChebyshevU()[x,5]
     A = framematrix(x, eSp, N, normtype="evaluate") 
     f = A[1:end,1:end] \ evaluate(x, fa)
 
-    uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e4, δ=1e-2, stabilise=true, correction=false);
-    cuS = coefficient_supporter_functions(A, x, uS, 2N+3, normtype="evaluate") 
+    λ1 = λ + 1e2*eps()*im
+    if abs(λ) < 1 
+        (xx, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ1, μ, η, W=1e2*abs(λ), δ=1e-3*abs(λ), a=a, N=N, stabilise=true);
+    else
+        (xx, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ1, μ, η, W=1e2, δ=1e-3, a=a, N=N, stabilise=true);
+    end
+    f1 = interpolate((xx,), real.(ywT0[1])[:], Gridded(Linear()))
+    f2 = interpolate((xx,), real.(yU_1[1])[:], Gridded(Linear()))
+    f3 = interpolate((xx,), real.(ywT1[1])[:], Gridded(Linear()))
+    f4 = interpolate((xx,), real.(yU0[1])[:], Gridded(Linear()))
+    # c = f1(-97π/(2λ)); ywT0[1] = ywT0[1].-c*sign.(λ.*xx).*sin.(λ.*xx)
+    # c = f2(-100π/(λ)); yU_1[1] = yU_1[1].+c*sign.(λ.*xx).*cos.(λ.*xx)
+
+    c = f1(-13π/(2λ)); ywT0[1] = ywT0[1].-c*sign.(λ.*xx).*sin.(λ.*xx)
+    c = f2(-100π/(λ)); yU_1[1] = yU_1[1].+c*sign.(λ.*xx).*cos.(λ.*xx)
+    c = f3(-100π/(-λ)); ywT1[1] = ywT1[1].+c*sign.(-λ.*xx).*cos.(-λ.*xx)
+    # c = f4(-97π/(-2λ)); yU0[1] = yU0[1].-c*sign.(-λ.*xx).*sin.(λ.*xx)
+    c = f4(-97π/(-2λ)); yU0[1] = yU0[1].-c*sign.(-λ.*xx).*sin.(-λ.*xx)
+    uS = interpolate_supporter_functions(xx, xx, [1.0], ywT0, yU_1, ywT1, yU0, a=a)
+
+    # uS = fft_supporter_functions(λ1, μ, η, a=a, N=N, W=1e2, δ=1e-3, stabilise=true, correction=false);
+    # cuS = coefficient_supporter_functions(A, x, uS, 2N+3, normtype="evaluate") 
 
     # Plot sanity check
-    xx = -10:0.001:10
-    plot(xx, uS[1][3](xx))
-    y = eSp[xx,1:length(cuS[1][1])]*cuS[4][3]
-    plot!(xx, y)
+    xx = -20:0.01:20
+    plot(xx, uS[1][3](xx)) 
+    plot(xx, uS[2][3](xx))  
+    plot(xx, uS[3][3](xx)) 
+    plot(xx, uS[4][3](xx))    
+
+    # d =  (a[1:end-1] + a[2:end]) ./ 2
+    # # for k = 1:K
+    # j = 1
+    # # c = findmin(uS[j][3](xx))[1]
+    # c = uS[j][3](-133π/20)
+    # plot(xx, uS[j][3](xx))#.-c*sign.(xx).*sin.(xx.*10))
+    
+    # j = 2
+    # c = findmin(uS[j][3](xx))[1]
+    # c = uS[j][3](-6π)
+    # plot(xx, uS[j][3](xx).+c*sign.(xx).*cos.(xx))    
+    # y = eSp[xx,1:length(cuS[1][1])]*cuS[4][3]
+    # plot!(xx, y)
 
     # Create appended sum space
     ASp = ElementAppendedSumSpace(uS, cuS, a)
@@ -72,6 +108,8 @@ fxλ = (x, λ) -> (sqrt(π)*exp(λ/4)).*ExtendedWeightedChebyshevU()[x,5]
     u = coefficient_interlace(u, N, K, appended=true)
     fd = coefficient_interlace(fd[1:end],N, K, appended=true)
     
+    append!(solns, [u])
+
     xx = Array(-10.:0.01:10)
     yy = ASp[xx,1:length(u)]*u
     p = plot(xx,yy, title="Wave Propogation, λ=$λ", 
