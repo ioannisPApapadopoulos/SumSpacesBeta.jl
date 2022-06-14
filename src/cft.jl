@@ -107,8 +107,8 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5,
             append!(ywT1, [x->half_laplace_wT1(affinetransform(a[els], a[els+1], x))])
             append!(yU0, [x->half_laplace_U0(affinetransform(a[els], a[els+1], x))])
             append!(yU_1, [x->half_laplace_U_1(affinetransform(a[els], a[els+1], x))])
-            return (ywT0, yU_1, ywT1, yU0)
         end
+        return (ywT0, yU_1, ywT1, yU0)
     end 
     
     if isempty(x1) || isempty(x2) || isempty(ywT0) || isempty(yU_1) || isempty(ywT1) || isempty(yU0) 
@@ -149,8 +149,9 @@ function coefficient_supporter_functions(A, x, uS, N; tol=1e-6, normtype="rieman
     return (ywt0, yu_1, ywt1, yu0)
 end
 
-function inverse_fourier_transform(F, ω; W=1000, δ=0.001)
+function inverse_fourier_transform(F, ω)
     
+    δ = step(ω); W = abs(ω[1])
     x = ifftshift(fftfreq(length(ω), 1/δ) * 2 * pi)
     N = length(ω)
 

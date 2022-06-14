@@ -98,7 +98,7 @@ function getindex(ASp::ElementAppendedSumSpace{AA, CC, E, T}, x::Real, j::Int)::
     if j == 1
         return SumSpace{1, E, T}(ASp.I)[x,1]
     elseif 2<=ind<=5
-        return ASp.A[ind-1][el](x)
+        return ASp.A[ind-1][el](x)[1]
     else
         y = affinetransform(ASp.I[el],ASp.I[el+1], x)
         if iseven(ind)

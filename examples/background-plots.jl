@@ -43,6 +43,8 @@ end
 
 ewT = ExtendedWeightedChebyshevT()
 eT = ExtendedChebyshevT()
+ewU = ExtendedWeightedChebyshevU()
+eU = ExtendedChebyshevU()
 
 xx = -8:0.01:8
 y = ewT[xx, 2]
@@ -53,3 +55,13 @@ xx = -3:0.01:3
 y = eT[xx,2]
 p = plot(xx, y, grid=false, aspect_ratio=:equal, legend=false, axis=([],false), linewidth=4, color=:black, size=(1000,300))
 savefig(p, "eT1.pdf")
+
+xx = -3:0.01:3
+y = ewU[xx, 1]
+p = plot(xx, y, grid=false, aspect_ratio=:equal, legend=false, axis=([],false), linewidth=4, color=:black)
+savefig(p, "ewU0-2.pdf")
+
+xx = -8:0.01:8
+y = eU[xx,3]
+p = plot(xx, y, grid=false, aspect_ratio=:equal, legend=false, axis=([],false), linewidth=4, color=:black, size=(800,300))
+savefig(p, "eU0-2.pdf")
