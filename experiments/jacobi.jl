@@ -1,5 +1,5 @@
 using ClassicalOrthogonalPolynomials
-using SumSpaces
+using SumSpacesBeta
 using HypergeometricFunctions, SpecialFunctions
 using Plots
 

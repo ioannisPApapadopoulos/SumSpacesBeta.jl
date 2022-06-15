@@ -1,4 +1,4 @@
-using SumSpaces
+using SumSpacesBeta
 using Plots
 
 xx = -4:0.001:4

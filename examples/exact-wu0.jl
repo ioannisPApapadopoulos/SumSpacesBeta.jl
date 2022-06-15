@@ -1,4 +1,4 @@
-using SumSpaces, SpecialFunctions
+using SumSpacesBeta, SpecialFunctions
 using Plots
 
 Δt = 1e-2

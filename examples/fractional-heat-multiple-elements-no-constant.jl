@@ -1,5 +1,5 @@
 using Revise
-using SumSpaces
+using SumSpacesBeta
 using ClassicalOrthogonalPolynomials, Plots
 
 N = 5

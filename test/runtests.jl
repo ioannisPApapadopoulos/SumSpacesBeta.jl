@@ -1,4 +1,4 @@
-using Test, SumSpaces
+using Test, SumSpacesBeta
 
 
 """

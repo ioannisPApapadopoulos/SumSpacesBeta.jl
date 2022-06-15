@@ -1,6 +1,7 @@
 using Revise
-using SumSpaces, LinearAlgebra, Interpolations
-using PyPlot
+using SumSpacesBeta, LinearAlgebra, Interpolations
+# using PyPlot
+using Plots
 using DelimitedFiles, LaTeXStrings, FFTW
 
 N = 7;
@@ -8,11 +9,8 @@ N = 7;
 fxλ = (x, λ) -> (sqrt(π)*exp(λ/4)).*ExtendedWeightedChebyshevU()[x,5]
 solns = []
 yylist = []
-# for λ in [-1.0]
-# for λ in [-1e-1,-5e-1,-1,-2,-4,-7,-10,-15,-20,-25,-30]
-# for λ in [-1e-1,-5e-1,-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-20]
-#λ = -2e1
-# λ = -0.9
+
+
 a = [-5,-3,-1.,1,3,5]; K = length(a)-1
 eSp = ElementSumSpace{1}(a)
 eSd = ElementSumSpace{2}(a)
@@ -21,9 +19,9 @@ Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
 x = collocation_points(M, Me, a=a, endpoints=[-25,25]) # Collocation points
 A = framematrix(x, eSp, N, normtype="evaluate") 
 
-for λ in -0.1:-0.1:-20
+# for λ in -0.1:-0.1:-20
 # for λ in [-0.9]
-
+λ = -1
 
     fa = x -> fxλ(x, λ)
     f = A[1:end,1:end] \ evaluate(x, fa)
@@ -32,7 +30,7 @@ for λ in -0.1:-0.1:-20
     # if abs(λ) < 1 
     #     (xfft, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ1, μ, η, W=1e3*abs(λ), δ=1e-3*abs(λ), a=a, N=N, stabilise=true);
     # else
-    (xfft, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ1, μ, η, W=1e3, δ=1e-3, a=a, N=N, stabilise=true);
+    (xfft, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=1e4, δ=1e-3, a=a, N=N, stabilise=true);
     # end
     f1 = interpolate((xfft,), real.(ywT0[1])[:], Gridded(Linear()))
     f2 = interpolate((xfft,), real.(yU_1[1])[:], Gridded(Linear()))
@@ -128,7 +126,7 @@ for λ in -0.1:-0.1:-20
     #         label="Sum space - 5 elements", 
     #         legend=:topleft)
 
-end  
+# end  
 
 yylist = readdlm("wave-propogation-yy.txt")
 solns = readdlm("wave-propogation4.txt")
@@ -200,8 +198,8 @@ yy = ASp[xx,1:length(u)]*u
 plot(xx, yy)
 display(gcf())
 yylist = vcat(yy', yylist)
-writedlm("wave-propogation-yy-0.txt", yylist)
-
+# writedlm("wave-propogation-yy-0.txt", yylist)
+yylist = readdlm("wave-propogation-yy-0.txt")
 
 
 

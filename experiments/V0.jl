@@ -1,5 +1,5 @@
 using Revise
-using ClassicalOrthogonalPolynomials, SumSpaces, Plots
+using ClassicalOrthogonalPolynomials, SumSpacesBeta, Plots
 import LinearAlgebra: I
 
 """

@@ -1,5 +1,5 @@
 using Revise
-using SumSpaces, Plots
+using SumSpacesBeta, Plots
 using QuadGK
 import LinearAlgebra: I, norm
 using LaTeXStrings

@@ -1,5 +1,5 @@
 using Revise
-using SumSpaces
+using SumSpacesBeta
 using LaTeXStrings, Plots
 using DelimitedFiles
 using LinearAlgebra

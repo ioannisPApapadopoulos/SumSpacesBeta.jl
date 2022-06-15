@@ -1,5 +1,5 @@
 using Revise
-using SumSpaces, Plots
+using SumSpacesBeta, Plots
 import LinearAlgebra: I
 
 """
