@@ -1,5 +1,6 @@
 function supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false)
     ω=range(-W, W, step=δ)
+    # ω=range(-W, W, length=2000000); δ = step(ω);
     ω = ω[1:end-1]
 
     # FIXME: Should probably find a nicer way around this
@@ -98,7 +99,7 @@ function interpolate_supporter_functions(x1, x2, s, ywT0, yU_1, ywT1, yU0; a=[-1
     return (ywT0, yU_1, ywT1, yU0)
 end
 
-function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false, correction=false, oscillation=false, x1 = [], x2 = [], ywT0 =[], yU_1=[], ywT1=[], yU0=[])
+function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5, stabilise=false, correction=false, oscillation=false, fft_flag=true, xx1=-10:0.01:10,xx2=-1.05:0.01:1.05, maxrecursion=100, x1 = [], x2 = [], ywT0 =[], yU_1=[], ywT1=[], yU0=[])
     # Special case analytical expressions
     if λ == μ == η ≈ 0
         ywT0 = []; ywT1 = []; yU0 = []; yU_1 = []
@@ -112,10 +113,14 @@ function fft_supporter_functions(λ, μ, η; W=1000., δ=0.001, a=[-1.,1.], N=5,
     end 
     
     if isempty(x1) || isempty(x2) || isempty(ywT0) || isempty(yU_1) || isempty(ywT1) || isempty(yU0) 
-        (x, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a, N=N, stabilise=stabilise)
-        # ywT0 = [[]]; yU_1=[[]]; ywT1=[[]]; yU0=[[]]; x = Array([]); s=[1.0]
+        if fft_flag == true
+            (x, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=W, δ=δ, a=a, N=N, stabilise=stabilise)
+        else
+            ywT0 = [[]]; yU_1=[[]]; ywT1=[[]]; yU0=[[]]; x = Array([]); s=[1.0]
+        end
+         
         if correction==true && length(s) == 1 && s[1] == 1
-            (x1, x2, ywT0, yU_1, ywT1, yU0) = mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N, stabilise=stabilise)
+            (x1, x2, ywT0, yU_1, ywT1, yU0) = mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N, stabilise=stabilise,xx1=xx1,xx2=xx2,maxrecursion=maxrecursion)
         else
             x1 = x; x2 = x;
         end
@@ -185,9 +190,9 @@ function parse_mathematica(val)
     return val1
 end
 
-function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabilise=false)
-    xx1 = Array(-10:0.01:10)
-    xx2 = Array(-1.05:0.01:1.05)
+function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabilise=false, xx1=-10:0.01:10, xx2=-1.05:0.01:1.05, maxrecursion=10)
+    xx1 = Array(xx1)
+    xx2 = Array(xx2)
     
     ywT0[1] = ywT0[1][x.!=0];yU_1[1] = yU_1[1][x.!=0];ywT1[1] = ywT1[1][x.!=0];yU0[1] = yU0[1][x.!=0];x = x[x.!=0]
 
@@ -204,14 +209,14 @@ function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabili
     else
         for y in xx1
             print(y)
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[Pi * BesselJ[0,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[Pi * BesselJ[0,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12, MaxRecursion -> m]]`;λ=λ,η=η,μ=μ,y=y,m=maxrecursion)
             a1 = parse_mathematica(a1)
 
             ywT0 = [vcat(ywT0[1],[a1])]
     
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[I*Pi*k*BesselJ[0,Abs[k]]/Abs[k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
-            a1 = parse_mathematica(a1)
-            yU_1 = [vcat(yU_1[1],[a1])]
+            a2 = weval(W`Re[1/(2*Pi)*NIntegrate[I*Pi*k*BesselJ[0,Abs[k]]/Abs[k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12, MaxRecursion -> m]]`;λ=λ,η=η,μ=μ,y=y,m=maxrecursion)
+            a2 = parse_mathematica(a2)
+            yU_1 = [vcat(yU_1[1],[a2])]
         end
         ywT0[1] = ywT0[1][perm1]
         yU_1[1] = yU_1[1][perm1]
@@ -220,20 +225,20 @@ function mathematica_correction(λ, μ, η, x, ywT0, yU_1, ywT1, yU0, N; stabili
     for y in xx2
         print(y)
         if stabilise==true
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,N=N,y=y)
+            a3 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12, MaxRecursion -> m]]`;λ=λ,η=η,μ=μ,N=N,y=y,m=maxrecursion)
         else
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+            a3 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(λ + η*I*k - μ*I*Sign[k] + Abs[k]) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12, MaxRecursion -> m]]`;λ=λ,η=η,μ=μ,y=y,m=maxrecursion)
         end
-        a1 = parse_mathematica(a1)
-        ywT1 = [vcat(ywT1[1],[a1])]
+        a3 = parse_mathematica(a3)
+        ywT1 = [vcat(ywT1[1],[a3])]
         
         if stabilise==true
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞},  WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,N=N,y=y)
+            a4 = weval(W`Re[1/(2*Pi)*NIntegrate[(-I)^(N+2) * Pi * BesselJ[N+2,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞},  WorkingPrecision -> 15, PrecisionGoal -> 12, MaxRecursion -> m]]`;λ=λ,η=η,μ=μ,N=N,y=y,m=maxrecursion)
         else
-            a1 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12]]`;λ=λ,η=η,μ=μ,y=y)
+            a4 = weval(W`Re[1/(2*Pi)*NIntegrate[- I *Pi * BesselJ[1,k]/(-λ*I*Sign[k] - μ + η*Abs[k] - I*k) * Exp[I y k], {k,-∞,∞}, WorkingPrecision -> 15, PrecisionGoal -> 12, MaxRecursion -> m]]`;λ=λ,η=η,μ=μ,y=y,m=maxrecursion)
         end
-        a1 = parse_mathematica(a1)
-        yU0 = [vcat(yU0[1],[a1])]
+        a4 = parse_mathematica(a4)
+        yU0 = [vcat(yU0[1],[a4])]
 
     end
     ywT1[1] = ywT1[1][perm2]

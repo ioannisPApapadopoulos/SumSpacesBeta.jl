@@ -1,11 +1,12 @@
 using Revise
-using SumSpacesBeta, LinearAlgebra, Interpolations
-# using PyPlot
-using Plots
+using SumSpacesBeta
+using LinearAlgebra, Interpolations
+using PyPlot
+# using Plots
 using DelimitedFiles, LaTeXStrings, FFTW
 
 N = 7;
-μ = 0; η = 0;
+μ = 1; η = 0;
 fxλ = (x, λ) -> (sqrt(π)*exp(λ/4)).*ExtendedWeightedChebyshevU()[x,5]
 solns = []
 yylist = []
@@ -16,42 +17,62 @@ eSp = ElementSumSpace{1}(a)
 eSd = ElementSumSpace{2}(a)
 M = max(N^2,6001)  # Number of collocation points in [-1,1]
 Me = M #÷ 10  # Number of collocation points in [-2,-1) and (1,2].
-x = collocation_points(M, Me, a=a, endpoints=[-25,25]) # Collocation points
-A = framematrix(x, eSp, N, normtype="evaluate") 
+xc = collocation_points(M, Me, a=a, endpoints=[-25,25]) # Collocation points
+A = framematrix(xc, eSp, N, normtype="evaluate") 
 
-# for λ in -0.1:-0.1:-20
+for λ in -0.1:-0.1:-20
 # for λ in [-0.9]
-λ = -1
+# λ = -1
 
     fa = x -> fxλ(x, λ)
-    f = A[1:end,1:end] \ evaluate(x, fa)
+    f = A[1:end,1:end] \ evaluate(xc, fa)
 
-    λ1 = λ + 1e2*eps()*im
+    # λ1 = λ + 1e2*eps()*im
     # if abs(λ) < 1 
     #     (xfft, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ1, μ, η, W=1e3*abs(λ), δ=1e-3*abs(λ), a=a, N=N, stabilise=true);
     # else
-    (xfft, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=1e4, δ=1e-3, a=a, N=N, stabilise=true);
+    # (xfft, s, ywT0, yU_1, ywT1, yU0) = supporter_functions(λ, μ, η, W=2π/abs(λ)*1e3, δ=2π/abs(λ)*1e-3, a=a, N=N, stabilise=true);
     # end
-    f1 = interpolate((xfft,), real.(ywT0[1])[:], Gridded(Linear()))
-    f2 = interpolate((xfft,), real.(yU_1[1])[:], Gridded(Linear()))
-    f3 = interpolate((xfft,), real.(ywT1[1])[:], Gridded(Linear()))
-    f4 = interpolate((xfft,), real.(yU0[1])[:], Gridded(Linear()))
+    # f1 = interpolate((xfft,), real.(ywT0[1])[:], Gridded(Linear()))
+    # f2 = interpolate((xfft,), real.(yU_1[1])[:], Gridded(Linear()))
+    # f3 = interpolate((xfft,), real.(ywT1[1])[:], Gridded(Linear()))
+    # f4 = interpolate((xfft,), real.(yU0[1])[:], Gridded(Linear()))
+    # xx2 = 1:0.01:2
+    # c = findmax(f1(xx2))
+    # xx = -20:0.001:20
+    # plot(xx, f1(xx))#.+c[1].*cos.(20 .*xx))#.-sign.(xx).*(xx2[c[2]] - π)))
+    # plot!(xx,-c[1].*cos.(20 .*xx))
     
-    if abs(λ) >= 1 
-        y = 5π:0.0001π:9*π
-        c = findmax(abs.(f1(y)))[1]; sc = sign(f1(15π/(2λ))); ywT0[1] = ywT0[1].+sc*c*sign.(λ.*xfft).*sin.(λ.*xfft)
-        c = findmax(abs.(f2(y)))[1]; sc = sign(f2(14π/(λ))); yU_1[1] = yU_1[1].-sc*c*sign.(λ.*xfft).*cos.(λ.*xfft)
-        c = findmax(abs.(f3(y)))[1]; sc = sign(f3(14π/(λ))); ywT1[1] = ywT1[1].-sc*c*sign.(λ.*xfft).*cos.(λ.*xfft)
-        c = findmax(abs.(f4(y)))[1]; sc = sign(f4(15π/(2λ))); yU0[1] = yU0[1].+sc*c*sign.(λ.*xfft).*sin.(λ.*xfft)
-        uS = interpolate_supporter_functions(xfft, xfft, [1.0], ywT0, yU_1, ywT1, yU0, a=a);
-    else
-        y = 10/-λ:0.001:30/-λ
-        c = findmax(abs.(f1(y)))[1]; sc = sign(f1(15π/(2λ))); ywT0[1] = ywT0[1].+sc*c*sign.(λ.*xfft).*sin.(λ.*xfft)
-        c = findmax(abs.(f2(y)))[1]; sc = sign(f2(14π/(λ))); yU_1[1] = yU_1[1].-sc*c*sign.(λ.*xfft).*cos.(λ.*xfft)
-        uS = interpolate_supporter_functions(xfft, xfft, [1.0], ywT0, yU_1, ywT1, yU0, a=a);
-    end
-    # uS = fft_supporter_functions(λ1, μ, η, a=a, N=N, W=1e2, δ=1e-3, stabilise=true, correction=false);
-    cuS = coefficient_supporter_functions(A, x, uS, 2N+3, normtype="evaluate") 
+    # if abs(λ) >= 1 
+    #     y = 5π:0.0001π:9*π
+    #     c = findmax(abs.(f1(y)))[1]; sc = sign(f1(15π/(2λ))); ywT0[1] = ywT0[1].+sc*c*sign.(λ.*xfft).*sin.(λ.*xfft)
+    #     c = findmax(abs.(f2(y)))[1]; sc = sign(f2(14π/(λ))); yU_1[1] = yU_1[1].-sc*c*sign.(λ.*xfft).*cos.(λ.*xfft)
+    #     c = findmax(abs.(f3(y)))[1]; sc = sign(f3(14π/(λ))); ywT1[1] = ywT1[1].-sc*c*sign.(λ.*xfft).*cos.(λ.*xfft)
+    #     c = findmax(abs.(f4(y)))[1]; sc = sign(f4(15π/(2λ))); yU0[1] = yU0[1].+sc*c*sign.(λ.*xfft).*sin.(λ.*xfft)
+    #     uS = interpolate_supporter_functions(xfft, xfft, [1.0], ywT0, yU_1, ywT1, yU0, a=a);
+    # else
+    #     y = 10/-λ:0.001:30/-λ
+    #     c = findmax(abs.(f1(y)))[1]; sc = sign(f1(15π/(2λ))); ywT0[1] = ywT0[1].+sc*c*sign.(λ.*xfft).*sin.(λ.*xfft)
+    #     c = findmax(abs.(f2(y)))[1]; sc = sign(f2(14π/(λ))); yU_1[1] = yU_1[1].-sc*c*sign.(λ.*xfft).*cos.(λ.*xfft)
+    #     uS = interpolate_supporter_functions(xfft, xfft, [1.0], ywT0, yU_1, ywT1, yU0, a=a);
+    # end
+    
+    # uS = fft_supporter_functions(λ, μ, η, a=a, N=N, stabilise=true, correction=true, fft_flag=false, xx1=-2:0.01:2, xx2=-2:0.01:2, maxrecursion=100)
+    
+    
+    
+    # supp = readdlm("uS-lmbda-$λ-mu-$μ-eta-$η/uS-N-$N.txt")
+    # x1 = []; x2 = [];
+    # ywT0 = []; yU_1 = []; ywT1 = []; yU0 = []
+    # append!(ywT0, [supp[3,:]]); append!(yU_1, [supp[4,:]]); append!(ywT1, [supp[5,:]]); append!(yU0, [supp[6,:]]); 
+    # x1 = supp[1,:]; x2 = supp[2,:];
+    # uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e4, δ=1e-2, stabilise=true, correction=true,x1=x1,x2=x2,ywT0=ywT0,yU_1=yU_1,ywT1=ywT1,yU0=yU0); # Actual functions
+
+    uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e3, δ=1e-3, stabilise=true)
+    cuS = coefficient_supporter_functions(A, xc, uS, 2N+3, normtype="evaluate") 
+    # cuS = [[[1.],[1.],[1.],[1.],[1.]], [[2.],[2.],[2.],[1.],[1.]], [[3.],[3.],[3.],[1.],[1.]], [[4.],[4.],[4.],[1.],[1.]]]
+    # xx = -20:0.01:20
+    # plot(xx, uS[1][3](xx)) 
 
     # Plot sanity check
     # xx = -10:0.1:10
@@ -114,22 +135,22 @@ A = framematrix(x, eSp, N, normtype="evaluate")
     fd = coefficient_interlace(fd[1:end],N, K, appended=true)
     
     append!(solns, [u])
-    # writedlm("wave-propogation4.txt", solns)
+    writedlm("wave-propogation-hilbert.txt", solns)
 
-    xx = -2:0.01:2
+    xx = -10:0.01:10
     yy = ASp[xx,1:length(u)]*u
     append!(yylist, [yy])
-    writedlm("wave-propogation-yy.txt", yylist)
+    writedlm("wave-propogation-yy-hilbert.txt", yylist)
     # xx = Array(-10.:0.01:10)
     # yy = ASp[xx,1:length(u)]*u
     # p = plot(xx,yy, title="Wave Propogation, λ=$λ", 
     #         label="Sum space - 5 elements", 
     #         legend=:topleft)
 
-# end  
+end  
 
-yylist = readdlm("wave-propogation-yy.txt")
-solns = readdlm("wave-propogation4.txt")
+yylist = readdlm("wave-propogation-hilbert-yy.txt")
+solns = readdlm("wave-propogation-hilbert.txt")
 
 # Special case where λ = 0.
 λ = 0
