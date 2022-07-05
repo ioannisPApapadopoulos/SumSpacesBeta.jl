@@ -149,38 +149,44 @@ for λ in -0.1:-0.1:-20
 
 end  
 
-yylist = readdlm("wave-propogation-hilbert-yy.txt")
+yylist = readdlm("wave-propogation-yy-hilbert.txt")
 solns = readdlm("wave-propogation-hilbert.txt")
 
 # Special case where λ = 0.
 λ = 0
 fa = x -> fxλ(x, λ)
-f = A[1:end,1:end] \ evaluate(x, fa)
-uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e2, δ=1e-3, stabilise=true, correction=false);
-cuS = coefficient_supporter_functions(A, x, uS, 2N+3, normtype="evaluate") 
+f = A[1:end,1:end] \ evaluate(xc, fa)
+uS = fft_supporter_functions(λ, μ, η, a=a, N=N, W=1e3, δ=1e-3, stabilise=true, correction=false);
+cuS = coefficient_supporter_functions(A, xc, uS, 2N+3, normtype="evaluate") 
 ASp = ElementAppendedSumSpace(uS, cuS, a)
 Id = (eSd \ ASp)[1:1+K*(2N+6),1:1+K*(2N+6)]
 
 x = axes(eSp, 1); H = inv.( x .- x')
-Hm = (1/π).*((eSp\(H*eSp))[1:2N+3,1:2N+3])    # Hilbert: Sp -> Sp
-Cm = [(eSd\(Derivative(x)*eSp)[j])[1:2N+7,1:2N+3] for j in 1:K]# Derivative: Sp -> Sd
+Hm = (1/π).*(((H*eSp))[1:2N+3,1:2N+3])    # Hilbert: Sp -> Sp
+Cm = [((Derivative(x)*eSp)[j])[1:2N+7,1:2N+3] for j in 1:K]# Derivative: Sp -> Sd
 Bm = (eSd\eSp)[1:2N+7,1:2N+3]                 # Identity: Sp -> Sd
 
 Dm =  [λ.*Bm + μ.*Bm*Hm + η.*Cm[j] + Cm[j]*Hm for j in 1:K]     # Helmholtz-like operator: Sp -> Sd   
 Dm = [hcat(zeros(size(Dm[j],1), 4),Dm[j]) for j in 1:K] # Adding 4 columns to construct: ASp -> Sd
+# for j in 1:K
+#     Dm[j][2:3,1:2] = I[1:2,1:2]; Dm[j][end-1:end,3:4] = I[1:2,1:2]
+#     if j == 1
+#         # In first element permute T0 column to start
+#         Dm[j] = [Dm[j][:,5] Dm[j][:,1:4] Dm[j][:,6:end]] 
+#         Dm[j] = Dm[j][4:end-2,6:end]
+#     else
+#         # In the rest delete the T0 column and row
+#         Dm[j] = [Dm[j][:,1:4] Dm[j][:,6:end]]
+#         Dm[j] = Dm[j][2:end,:] 
+#         Dm[j] = Dm[j][3:end-2,5:end]
+#     end
+    
+# end
+
 for j in 1:K
     Dm[j][2:3,1:2] = I[1:2,1:2]; Dm[j][end-1:end,3:4] = I[1:2,1:2]
-    if j == 1
-        # In first element permute T0 column to start
-        Dm[j] = [Dm[j][:,5] Dm[j][:,1:4] Dm[j][:,6:end]] 
-        Dm[j] = Dm[j][4:end-2,6:end]
-    else
-        # In the rest delete the T0 column and row
-        Dm[j] = [Dm[j][:,1:4] Dm[j][:,6:end]]
-        Dm[j] = Dm[j][2:end,:] 
-        Dm[j] = Dm[j][3:end-2,5:end]
-    end
-    
+    Dm[j] = [Dm[j][:,1:4] Dm[j][:,6:end]]
+    Dm[j] = Dm[j][2:end,:] 
 end
 
 u = []
@@ -192,17 +198,15 @@ fd = BlockArray(fd, vcat(1,Fill(K,(length(fd)-1)÷K)))
 fd = coefficient_stack(fd, N, K, appended=true)
 for j = 1:K
     if j == 1
-        fd_t = fd[Block.(j)][4:end-2]
+        fd_t = fd[Block.(j)][2:end]
     else
-        fd_t = fd[Block.(j)][3:end-2]
+        fd_t = fd[Block.(j)]
     end
     # Solve for each element seperately and append to form global
     # vector of coefficients
     u_t = Dm[j]\fd_t
     if j==1
-        u_t = vcat(zeros(5),u_t)
-    else
-        u_t = vcat(zeros(4),u_t)
+        u_t = vcat(zeros(1),u_t)
     end
     append!(u, u_t)
 
@@ -214,13 +218,13 @@ fd = coefficient_interlace(fd[1:end],N, K, appended=true)
 # append!(solns, [u])
 # writedlm("wave-propogation4.txt", solns)
 
-xx = -2:0.01:2
+xx = -10:0.01:10
 yy = ASp[xx,1:length(u)]*u
 plot(xx, yy)
 display(gcf())
 yylist = vcat(yy', yylist)
-# writedlm("wave-propogation-yy-0.txt", yylist)
-yylist = readdlm("wave-propogation-yy-0.txt")
+# writedlm("wave-propogation-yy-hilbert-0.txt", yylist)
+yylist = readdlm("wave-propogation-yy-hilbert-0.txt")
 
 
 
@@ -229,7 +233,7 @@ yylist = readdlm("wave-propogation-yy-0.txt")
 
 # x = -2:0.01:2; ω2 = [1e-1,5e-1,1,2,4,7,10,15,20];
 # x = -2:0.01:2; ω2 =-[-1e-1,-5e-1,-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12]#,-13,-14,-15]#,-16,-17,-20]
-xx = -2:0.01:2; ω2 = 0:0.1:20
+xx = -10:0.01:10; ω2 = 0:0.1:20
 # uaa(x,t) = ASp[x,1:length(solns[1])]'*solns[findall(x->x==t,ω2)[1]][1:end] 
 uaa(x,ω) = yylist[findall(x->x==ω,ω2)[1],findall(y->y==x,xx)[1]]
 X = repeat(reshape(xx, 1, :), length(ω2), 1)
@@ -261,7 +265,7 @@ for c in p.collections
     c.set_edgecolor("face")
 end
 display(gcf())
-savefig("wave-propogation-contour-py.pdf")
+savefig("wave-propogation-hilbert-contour-py.pdf")
 
 yylist_ifft = []
 ω = -1000:0.01:1000; ω = ω[1:end-1]
@@ -303,7 +307,7 @@ for c in p.collections
 end
 display(gcf())
 
-savefig("wave-propogation-contour-ifft-0-py.pdf")
+savefig("wave-propogation-hilbert-contour-ifft-0-py.pdf")
 
 
 # xx = Array(-10.:0.01:10)
